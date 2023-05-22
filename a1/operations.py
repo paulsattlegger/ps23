@@ -1,8 +1,8 @@
 import operator
 from abc import ABC, abstractmethod
-from string import ascii_lowercase, ascii_uppercase
+from string import ascii_lowercase, ascii_uppercase, digits
 
-from a1.stack import Stack
+from stack import Stack
 
 ARITHMETIC_OPERATIONS = {
     "+": operator.add,
@@ -33,7 +33,7 @@ class OperationMode(ABC):
 class IntegerConstruction(OperationMode):
     def handle(self, token) -> None:
         match token:
-            case 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9:
+            case d if d in digits:
                 data = self._context.data.pop()
                 data *= 10
                 data += int(token)
@@ -42,29 +42,28 @@ class IntegerConstruction(OperationMode):
                 data = self._context.data.pop()
                 self._context.data.push(float(data))
                 self._context.operation_mode = DecimalPlaceConstruction(self._context)
-            case other:
+            case _:
                 self._context.operation_mode = Execution(self._context)
-                self._context.operation_mode.handle(other)
+                self._context.operation_mode.handle(token)
 
 
 class DecimalPlaceConstruction(OperationMode):
-
     def __init__(self, context: "Calculator") -> None:
         super().__init__(context)
         self.m: int = -2
 
     def handle(self, token) -> None:
         match token:
-            case 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9:
+            case d if d in digits:
                 data = self._context.data.pop()
                 data += float(token) * 10 ** (self.m + 1)
                 self.m -= 1
             case ".":
                 self._context.data.push(0.0)
                 self._context.operation_mode = DecimalPlaceConstruction(self._context)
-            case other:
+            case _:
                 self._context.operation_mode = Execution(self._context)
-                self._context.operation_mode.handle(other)
+                self._context.operation_mode.handle(token)
 
 
 class StringConstruction(OperationMode):
@@ -94,7 +93,6 @@ class StringConstruction(OperationMode):
 
 
 class Execution(OperationMode):
-
     def handle(self, token) -> None:
         match token:
             case "(":
@@ -108,7 +106,7 @@ class Execution(OperationMode):
             case l if l in ascii_uppercase:
                 data = self._context.data.pop()
                 self._context.register[token.lower()] = data
-            case 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0:
+            case d if d in digits:
                 self._context.data.push(int(token))
                 self._context.operation_mode = IntegerConstruction(self._context)
             case "'":
@@ -174,7 +172,6 @@ class Execution(OperationMode):
         for i in stack:
             if i is not None:
                 self._context.data.push(i)
-
 
     def copy(self) -> None:
         a = self._context.data.pop()
@@ -290,7 +287,7 @@ class Execution(OperationMode):
         if type(a) is not str and type(b) is str:
             return -1
 
-        raise ValueError('Cannot compare undefined types')
+        raise ValueError("Cannot compare undefined types")
 
     @staticmethod
     def cast_value(value):

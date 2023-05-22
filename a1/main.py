@@ -1,8 +1,7 @@
-from collections import deque
 from string import ascii_lowercase
 
-from a1.stack import Stack
 from operations import OperationMode, Execution
+from stack import Stack
 
 
 class Calculator:
@@ -10,14 +9,14 @@ class Calculator:
         self.operation_mode: OperationMode = Execution(self)
         self.cmd: Stack = Stack()
         self.data: Stack = Stack()
-        self.register: dict = {k: 0 for k in ascii_lowercase}
-        self.register["a"] = "(Welcome)\"'\""
+        self.register: dict = {k: None for k in ascii_lowercase}
+        self.register["a"] = '(Welcome)"\'"'
 
     def run(self) -> None:
-        for token in self.register["a"]:
+        for token in self.register["a"][::-1]:
             self.cmd.push(token)
         while self.cmd:
-            token = self.cmd.popleft()
+            token = self.cmd.pop()
             self.operation_mode.handle(token)
 
 
