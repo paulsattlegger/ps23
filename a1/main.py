@@ -1,18 +1,8 @@
 from collections import deque
 from string import ascii_lowercase
 
+from a1.stack import Stack
 from operations import OperationMode, Execution
-
-
-class Stack(deque):
-    def push(self, __x) -> None:
-        self.append(__x)
-
-    def pop(self):
-        return self.popleft()
-
-    def peek(self):
-        return self[len(self) - 1]
 
 
 class Calculator:
@@ -27,7 +17,7 @@ class Calculator:
         for token in self.register["a"]:
             self.cmd.push(token)
         while self.cmd:
-            token = self.cmd.pop()
+            token = self.cmd.popleft()
             self.operation_mode.handle(token)
 
 
