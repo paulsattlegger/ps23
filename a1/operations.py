@@ -74,22 +74,15 @@ class StringConstruction(OperationMode):
     def handle(self, token) -> None:
         match token:
             case "(":
-                data = self._context.data.pop()
-                data = f"{data}{token}"
-                self._context.data.push(data)
                 self._mode += 1
             case ")":
-                if self._mode > 1:
-                    data = self._context.data.pop()
-                    data = f"{data}{token}"
-                    self._context.data.push(data)
                 self._mode -= 1
-                if self._mode == 0:
-                    self._context.operation_mode = Execution(self._context)
-            case _:
-                data = self._context.data.pop()
-                data = f"{data}{token}"
-                self._context.data.push(data)
+        if self._mode >= 1:
+            data = self._context.data.pop()
+            data = f"{data}{token}"
+            self._context.data.push(data)
+        elif self._mode == 0:
+            self._context.operation_mode = Execution(self._context)
 
 
 class Execution(OperationMode):
@@ -308,7 +301,7 @@ class Execution(OperationMode):
                 value = float(line)
             except ValueError:
                 if line.startswith("(") and line.endswith(")"):
-                    value = line
+                    value = line[1:-1]
                 else:
                     value = "()"
         self._context.data.push(value)
