@@ -10,11 +10,8 @@ class Calculator:
         self.cmd: Stack = Stack()
         self.data: Stack = Stack()
         self.register: dict = {k: None for k in ascii_lowercase}
-        self.register["a"] = '(Welcome)"\'"'
 
     def run(self) -> None:
-        for token in self.register["a"][::-1]:
-            self.cmd.push(token)
         while self.cmd:
             token = self.cmd.pop()
             self.operation_mode.handle(token)
@@ -22,6 +19,9 @@ class Calculator:
 
 def main() -> None:
     calculator = Calculator()
+    calculator.register["a"] = '(Welcome)"\'"'
+    for token in calculator.register["a"][::-1]:
+        calculator.cmd.push(token)
     calculator.run()
 
 
