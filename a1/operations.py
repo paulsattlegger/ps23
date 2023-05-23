@@ -12,11 +12,6 @@ ARITHMETIC_OPERATIONS = {
     "%": operator.mod,
 }
 
-COMPARISON_OPERATORS = {
-    "=": operator.eq,
-    "<": operator.lt,
-    ">": operator.gt,
-}
 
 EPSILON = 1e-9
 
@@ -147,7 +142,7 @@ class Execution(OperationMode):
             return
         command = command[::-1]
         for token in command:
-            self._context.cmd.appendleft(token)
+            self._context.cmd.push(token)
 
     def delete(self) -> None:
         n = self._context.data.pop()
@@ -155,7 +150,7 @@ class Execution(OperationMode):
             self._context.data.push(n)
             return
 
-        length: int = len(self._context.data) - 1
+        length: int = len(self._context.data)
         if n > length:
             self._context.data.push(n)
             return
@@ -171,11 +166,11 @@ class Execution(OperationMode):
         if type(a) is not int:
             return
         try:
-            length = len(self._context.data) - 1
+            length = len(self._context.data) + 1
             data = self._context.data[length - a]
             self._context.data.push(data)
         except IndexError:
-            pass
+            print("IndexError")
 
     def negate(self) -> None:
         a = self._context.data.pop()
@@ -188,9 +183,9 @@ class Execution(OperationMode):
         a = self._context.data.pop()
 
         if a == "()" or -EPSILON <= a <= EPSILON:
-            self._context.data.push(0)
-        else:
             self._context.data.push(1)
+        else:
+            self._context.data.push(0)
 
     def logical_operator(self, token) -> None:
         a = self._context.data.pop()
@@ -218,7 +213,7 @@ class Execution(OperationMode):
         elif token == "%" and type(a) is float or type(b) is float:
             self._context.data.push("()")
         else:
-            data = ARITHMETIC_OPERATIONS[token](a, b)
+            data = ARITHMETIC_OPERATIONS[token](b, a)
             self._context.data.push(data)
 
     def comparison_operator(self, token) -> None:
@@ -300,6 +295,7 @@ class Execution(OperationMode):
             try:
                 value = float(line)
             except ValueError:
+                #TODO: well-formedness check
                 if line.startswith("(") and line.endswith(")"):
                     value = line[1:-1]
                 else:
