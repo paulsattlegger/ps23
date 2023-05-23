@@ -9,7 +9,7 @@ class Calculator:
         self.operation_mode: OperationMode = Execution(self)
         self.cmd: Stack = Stack()
         self.data: Stack = Stack()
-        self.data.push(1)
+        self.data.push(3)
         self.register: dict = {k: None for k in ascii_lowercase}
 
     def run(self) -> None:
