@@ -53,6 +53,7 @@ class DecimalPlaceConstruction(OperationMode):
                 data = self._context.data.pop()
                 data += float(token) * 10 ** (self.m + 1)
                 self.m -= 1
+                self._context.data.push(data)
             case ".":
                 self._context.data.push(0.0)
                 self._context.operation_mode = DecimalPlaceConstruction(self._context)
