@@ -131,6 +131,7 @@ class Execution(OperationMode):
     def apply_later(self) -> None:
         command = self._context.data.pop()
         if type(command) is not str:
+            self._context.data.push(command)
             return
         for token in command:
             self._context.cmd.push(token)
@@ -138,10 +139,14 @@ class Execution(OperationMode):
     def apply_immediately(self) -> None:
         command = self._context.data.pop()
         if type(command) is not str:
+            # if its not a string --> no effect
+            self._context.data.push(command)
             return
         command = command[::-1]
         for token in command:
             self._context.cmd.push(token)
+
+
 
     def delete(self) -> None:
         n = self._context.data.pop()
