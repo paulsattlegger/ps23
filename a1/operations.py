@@ -10,6 +10,7 @@ ARITHMETIC_OPERATIONS = {
     "*": operator.mul,
     "/": operator.floordiv,
     "%": operator.mod,
+    "//": operator.truediv,
 }
 
 EPSILON = 1e-9
@@ -134,7 +135,7 @@ class Execution(OperationMode):
             self._context.data.push(command)
             return
         for token in command:
-            self._context.cmd.push(token)
+            self._context.cmd.appendleft(token)
 
     def apply_immediately(self) -> None:
         command = self._context.data.pop()
@@ -145,8 +146,6 @@ class Execution(OperationMode):
         command = command[::-1]
         for token in command:
             self._context.cmd.push(token)
-
-
 
     def delete(self) -> None:
         n = self._context.data.pop()
@@ -185,8 +184,13 @@ class Execution(OperationMode):
 
     def null_check(self) -> None:
         a = self._context.data.pop()
-
-        if a == "()" or -EPSILON <= a <= EPSILON:
+        print("**********")
+        print(a)
+        print("**********")
+        if a == "()" :
+            self._context.data.push(1)
+        elif str(a).isnumeric() and -EPSILON <= a <= EPSILON:
+            print("here")
             self._context.data.push(1)
         else:
             self._context.data.push(0)
@@ -212,11 +216,13 @@ class Execution(OperationMode):
 
         if type(a) is str or type(b) is str:
             self._context.data.push("()")
-        elif token == "/" and b == 0:
+        elif token == "/" and a == 0:
             self._context.data.push("()")
-        elif token == "%" and type(a) is float or type(b) is float:
+        elif token == "%" and (type(a) is float or type(b) is float):
             self._context.data.push("()")
         else:
+            if type(a) is float or type(b) is float:
+                token = "//"
             data = ARITHMETIC_OPERATIONS[token](b, a)
             self._context.data.push(data)
 
@@ -226,11 +232,11 @@ class Execution(OperationMode):
         compare: int = self.compare(a, b)
 
         if token == "=":
-            self._context.data.push(compare == 0)
+            self._context.data.push(1 if compare == 0 else 0)
         elif token == "<":
-            self._context.data.push(compare < 0)
+            self._context.data.push(1 if compare < 0 else 0)
         elif token == ">":
-            self._context.data.push(compare > 0)
+            self._context.data.push(1 if compare > 0 else 0)
 
     def compare(self, a, b, epsilon=EPSILON) -> int:
         """
