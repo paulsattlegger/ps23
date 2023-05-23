@@ -185,13 +185,9 @@ class Execution(OperationMode):
 
     def null_check(self) -> None:
         a = self._context.data.pop()
-        print("**********")
-        print(a)
-        print("**********")
         if a == "()" :
             self._context.data.push(1)
         elif str(a).isnumeric() and -EPSILON <= a <= EPSILON:
-            print("here")
             self._context.data.push(1)
         else:
             self._context.data.push(0)
@@ -222,7 +218,7 @@ class Execution(OperationMode):
         elif token == "%" and (type(a) is float or type(b) is float):
             self._context.data.push("()")
         else:
-            if type(a) is float or type(b) is float:
+            if (type(a) is float or type(b) is float) and token == "/":
                 token = "//"
             data = ARITHMETIC_OPERATIONS[token](b, a)
             self._context.data.push(data)

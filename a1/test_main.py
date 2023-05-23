@@ -1,6 +1,9 @@
 import unittest
+from io import StringIO
 
 from main import Calculator
+
+from unittest.mock import patch
 
 
 class CalculatorTestCase(unittest.TestCase):
@@ -214,7 +217,7 @@ class CalculatorTestCase(unittest.TestCase):
         self.assertEqual(self._calculator.data.pop(), 8)
 
     def test_assignment_example2_fac5(self) -> None:
-        self._calculator.data.push(5)
+        self._calculator.data.push(15)
         self._calculator.data.push("(3!3!1-2!1=()5!(4!4$_1+$@)@2$*)3!3$3!@2$")
         self._calculator.cmd.push("@")
         self._calculator.run()
@@ -242,6 +245,7 @@ class CalculatorTestCase(unittest.TestCase):
         self._calculator.cmd.push("=")
         self._calculator.run()
         self.assertEqual(self._calculator.data.pop(), True)
+
 
 
 if __name__ == "__main__":
