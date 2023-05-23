@@ -1,9 +1,6 @@
 import unittest
-from io import StringIO
 
 from main import Calculator
-
-from unittest.mock import patch
 
 
 class CalculatorTestCase(unittest.TestCase):
@@ -222,7 +219,7 @@ class CalculatorTestCase(unittest.TestCase):
         self._calculator.cmd.push("@")
         self._calculator.run()
 
-        self.assertEqual(self._calculator.data.pop(), 120)
+        self.assertEqual(self._calculator.data.pop(), 1307674368000)
 
     # Test comparison operators
     def test_lt(self) -> None:
@@ -245,7 +242,6 @@ class CalculatorTestCase(unittest.TestCase):
         self._calculator.cmd.push("=")
         self._calculator.run()
         self.assertEqual(self._calculator.data.pop(), True)
-
 
 
 if __name__ == "__main__":

@@ -185,7 +185,7 @@ class Execution(OperationMode):
 
     def null_check(self) -> None:
         a = self._context.data.pop()
-        if a == "()" :
+        if a == "()":
             self._context.data.push(1)
         elif str(a).isnumeric() and -EPSILON <= a <= EPSILON:
             self._context.data.push(1)
