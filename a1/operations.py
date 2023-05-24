@@ -16,6 +16,18 @@ ARITHMETIC_OPERATIONS = {
 EPSILON = 1e-9
 
 
+def is_well_formed(string):
+    stack = []  # Stack to store opening brackets
+    for char in string:
+        if char == "(":
+            stack.append(char)
+        elif char == ")":
+            if len(stack) == 0 or stack[-1] != "(":
+                return False  # Unmatched closing bracket
+            stack.pop()
+    return len(stack) == 0  # True if all opening brackets are matched
+
+
 class OperationMode(ABC):
     def __init__(self, context: "Calculator") -> None:
         self._context = context
@@ -141,7 +153,7 @@ class Execution(OperationMode):
     def apply_immediately(self) -> None:
         command = self._context.data.pop()
         if type(command) is not str:
-            # if its not a string --> no effect
+            # if it is not a string --> no effect
             self._context.data.push(command)
             return
         command = command[::-1]
@@ -302,7 +314,7 @@ class Execution(OperationMode):
             try:
                 value = float(line)
             except ValueError:
-                if ("(" in line and ")" in line) and self.is_well_formed(line):
+                if ("(" in line and ")" in line) and is_well_formed(line):
                     value = line
                 elif "(" not in line and ")" not in line:
                     value = line
@@ -313,14 +325,3 @@ class Execution(OperationMode):
     def write_output(self) -> None:
         data = self._context.data.pop()
         print(data)
-
-    def is_well_formed(self, string):
-        stack = []  # Stack to store opening brackets
-        for char in string:
-            if char == "(":
-                stack.append(char)
-            elif char == ")":
-                if len(stack) == 0 or stack[-1] != "(":
-                    return False  # Unmatched closing bracket
-                stack.pop()
-        return len(stack) == 0  # True if all opening brackets are matched
