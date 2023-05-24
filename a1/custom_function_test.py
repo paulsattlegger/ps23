@@ -26,3 +26,15 @@ class CalculatorTestCase(unittest.TestCase):
         self._calculator.register["c"] = '\'@##1-0()(7!7$5!5$+6!6$6!6$1-2!_~5+$4!4$()6!6$2!@)2!@1$1$2$3!3$/'
         self._calculator.run()
         self.assertAlmostEquals(5.0721, self._calculator.data.pop())
+
+    @patch('builtins.input', side_effect=['e@', '1.0 2.0 3.0 4.0 5.0 6.0 7.0', ' '])
+    def test_variance_simple(self, mock_in) -> None:
+        self._calculator.register["e"]  = '\'2!@@#1+!@#$#2/#2/0()(7!7$5!5$+6!6$6!6$1-2!_~5+$4!4$()6!6$2!@)2!@1$1$2$3!3$/#2-#2-0()(8!8$8!-2!*5!5$+7!7$7!7$7!7$1-2!_~6+$5!5$()7!7$2!@)2!@1$1$2$3!3$/2$'
+        self._calculator.run()
+        self.assertAlmostEquals(4.666666666666667, self._calculator.data.pop())
+
+    @patch('builtins.input', side_effect=['e@', '2.1512 3.5 4.124 1234.124 421.2 32.1 45.66 213.421', ' '])
+    def test_variance_floats(self, mock_in) -> None:
+        self._calculator.register["e"]  = '\'2!@@#1+!@#$#2/#2/0()(7!7$5!5$+6!6$6!6$1-2!_~5+$4!4$()6!6$2!@)2!@1$1$2$3!3$/#2-#2-0()(8!8$8!-2!*5!5$+7!7$7!7$7!7$1-2!_~6+$5!5$()7!7$2!@)2!@1$1$2$3!3$/2$'
+        self._calculator.run()
+        self.assertAlmostEquals(181541.44480577632, self._calculator.data.pop())
