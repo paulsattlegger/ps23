@@ -1,0 +1,1 @@
+(x -> y -> z -> add (mult x y) z) 2 3 5

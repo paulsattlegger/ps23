@@ -86,3 +86,12 @@ class Lexer:
             if token.type == TokenType.EOF:
                 break
             yield token
+
+    def tokens_as_list(self) -> list[Token]:
+        return list(self.tokens())
+
+    def peek_next_token(self):
+        current_pos = self.pos
+        next_token = self.get_next_token()
+        self.pos = current_pos
+        return next_token
