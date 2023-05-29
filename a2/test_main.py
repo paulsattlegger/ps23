@@ -9,24 +9,24 @@ class InterpreterTest(unittest.TestCase):
         self._interpreter = Interpreter()
 
     def test_eval_simple(self):
-        self.assertEqual(self._interpreter.eval("mult 2 2"), "4")
-        self.assertEqual(self._interpreter.eval("plus 2 2"), "4")
-        self.assertEqual(self._interpreter.eval("minus 2 2"), "0")
+        self.assertEqual(self._interpreter.interpret_string("mult 2 2"), 4)
+        self.assertEqual(self._interpreter.interpret_string("add 2 2"), 4)
+        self.assertEqual(self._interpreter.interpret_string("minus 2 2"), 0)
 
     def test_eval_cond(self):
-        self.assertEqual(self._interpreter.eval("cond 0 a b"), "a")
-        self.assertEqual(self._interpreter.eval("cond {} a b"), "a")
+        self.assertEqual(self._interpreter.interpret_string("cond 0 1 2"), 2)
+        self.assertEqual(self._interpreter.interpret_string("cond {} a b"), "a")
 
     def test_eval_complex(self):
-        self.assertEqual(self._interpreter.eval("(x -> y -> add (mult x x) y) 2 3"), "7")
+        self.assertEqual(self._interpreter.interpret_string("(x -> y -> add (mult x x) y) 2 3"), 7)
 
     def test_eval_record_not_reducible(self):
         self.assertEqual(
-            self._interpreter.eval("{a=x->y->add(mult x x)y, b=a 2, c=b 3}"), "{a=x->y->add(mult x x)y, b=a 2, c=b 3}"
+            self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}"), "{a=x->y->add(mult x x)y, b=a 2, c=b 3}"
         )
 
     def test_eval_record_reducible(self):
-        self.assertEqual(self._interpreter.eval("(x->y->add(mult~x~x)y) 3"), "y->add 9 y")
+        self.assertEqual(str(self._interpreter.interpret_string("(x->y->add(mult x x)y) 3")), "(y -> (add (9 ) y ))")
 
     def test_eval_record_environment(self):
         self.assertEqual(self._interpreter.eval("{a=x->y->add(mult x x)y, b=a 2, c=b 3}minus(b 5)c"), "y->add 9 y", 2)
