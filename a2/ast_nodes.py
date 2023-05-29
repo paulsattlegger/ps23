@@ -24,10 +24,9 @@ Mapping between those and the classes below:
         -> parse_expr()
 
 <apply>        -> parse_apply()
-    -> <basic>
-    -> <apply> <basic>
-        -> parse_apply()
-        -> parse_basic()
+    -> basically parses basics until there are no more basics to parse, and then returns an Apply object with the other basics
+    as arguments, since an <apply> is basically just a list of basics, where the first basic is the function/recorrds/name
+    and the rest are arguments
 
 <basic>        -> parse_basic()
     -> <integer>
