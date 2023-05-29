@@ -14,8 +14,9 @@ class InterpreterTest(unittest.TestCase):
         self.assertEqual(self._interpreter.interpret_string("minus 2 2"), 0)
 
     def test_eval_cond(self):
-        self.assertEqual(self._interpreter.interpret_string("cond 0 1 2"), 2)
-        self.assertEqual(self._interpreter.interpret_string("cond {} a b"), "a")
+        self.assertEqual(str(self._interpreter.interpret_string("cond 1 a b")), "a")
+        self.assertEqual(str(self._interpreter.interpret_string("cond {} a b")), "b")
+        self.assertEqual(str(self._interpreter.interpret_string("cond 0 1 2")), "2")
 
     def test_eval_complex(self):
         self.assertEqual(self._interpreter.interpret_string("(x -> y -> add (mult x x) y) 2 3"), 7)
@@ -29,7 +30,10 @@ class InterpreterTest(unittest.TestCase):
         self.assertEqual(str(self._interpreter.interpret_string("(x->y->add(mult x x)y) 3")), "(y -> (add (9 ) y ))")
 
     def test_eval_record_environment(self):
-        self.assertEqual(self._interpreter.eval("{a=x->y->add(mult x x)y, b=a 2, c=b 3}minus(b 5)c"), "y->add 9 y", 2)
+        self.assertEqual(self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}minus(b 5)c") , 2)
+
+    def test_minus_params_functions(self):
+        self.assertEqual(self._interpreter.interpret_string("minus ((x -> y -> add (mult x x) y) 2 5) ((x -> y -> add (mult x x) y) 2 3)"),2)
 
     def test_eval_large_example(self):
         expr = """
@@ -52,7 +56,7 @@ class InterpreterTest(unittest.TestCase):
         }
         sum (range 3 6)
         """
-        self.assertEqual(self._interpreter.eval(expr), "12")
+        self.assertEqual(self._interpreter.interpret_string(expr), "12")
 
 
 class LexerTest(unittest.TestCase):
