@@ -11,7 +11,7 @@ class ASTBuilder:
         if self.current_token.type == expected_type:
             self.current_token = self.lexer.get_next_token()
         else:
-            raise Exception(f"Expected token type {expected_type}, but got {self.current_token.type}")
+            raise Exception(f"Syntax Error: Expected token type {expected_type}, but got {self.current_token.type}")
 
     def parse(self):
         return self.parse_expr()
@@ -21,8 +21,8 @@ class ASTBuilder:
             param = self.parse_name()
             self.eat(TokenType.ARROW)
             expr = self.parse_expr()
-            return Expression(FunctionDeclaration(param, expr))
-        return Expression(self.parse_apply())
+            return (FunctionDeclaration(param, expr))
+        return (self.parse_apply())
 
     def parse_apply(self):
         node = self.parse_basic()

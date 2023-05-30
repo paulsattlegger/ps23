@@ -1,5 +1,5 @@
 from a2.lexer import Lexer
-from a2.parser import ASTBuilder, FunctionDeclaration, Expression, Apply, Integer, Pair, PredefinedFunction, Record, \
+from a2.parser import ASTBuilder, FunctionDeclaration, Apply, Integer, Pair, PredefinedFunction, Record, \
     ASTNode
 
 
@@ -32,7 +32,7 @@ class Interpreter:
         return self.eval()
 
     def eval(self):
-        self._ast.eval(self.environment)
+        return str(self._ast.eval(self.environment))
 
     @staticmethod
     def read_file(path) -> str:
@@ -46,7 +46,8 @@ class Interpreter:
 
 def main():
     interpreter = Interpreter()
-    print(interpreter.interpret_string("""{x=5} sub x 1"""))
+    print(interpreter.interpret_string("""minus ((x -> y -> add (mult x x) y) 2 5) ((x -> y -> add (mult x x) y) 2 3)"""))
+    # print(interpreter.interpret_string("""add 2 2 """))
 
 
 if __name__ == "__main__":
