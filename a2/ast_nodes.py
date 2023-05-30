@@ -66,29 +66,8 @@ Mapping between those and the classes below:
 "{"            -> TokenType.LBRACE
 "}"            -> TokenType.RBRACE
 """
+import copy
 from typing import Dict
-
-
-class Environment:
-    def __init__(self, parent=None):
-        self.parent = parent
-        self.bindings = {}
-
-    def __str__(self):
-        return str(self.bindings)
-
-    def __repr__(self):
-        return self.__str__()
-
-    def add_binding(self, name, value):
-        self.bindings[name] = value
-
-    def get_binding(self, name):
-        if name in self.bindings:
-            return self.bindings[name]
-        else:
-            return None
-
 
 class ASTNode:
     def __str__(self):
@@ -125,7 +104,7 @@ class FunctionDeclaration(ASTNode):
         :return:
         """
 
-        updated_env = env.copy()
+        updated_env = copy.deepcopy(env)
         if len(self.args) > 0:
             updated_env[self.param.value] = self.args[0].eval(env)
             self.args = self.args[1:]
@@ -146,7 +125,6 @@ class FunctionDeclaration(ASTNode):
         return True
 
 
-
 class Apply(ASTNode):
     def __init__(self, func):
         self.func = func
@@ -162,13 +140,33 @@ class Apply(ASTNode):
         if isinstance(self.func, FunctionDeclaration):
             self.func.set_args(self.arguments)
         if isinstance(self.func, Apply):
+
+            apply = Apply(self.func.func)
+            # unwrap nested apply, e.g. (a 2)3) -> (a 2 3)
+            for arg in self.func.arguments:
+                apply.add_argument(arg)
+
             for arg in self.arguments:
-                self.func.add_argument(arg)
-        return self.func.eval(env)
+                apply.add_argument(arg)
+
+            return apply.eval(env)
+        if isinstance(self.func, Record):
+            record = self.func.eval(env)
+            if not self.arguments:
+                return record
+            self.func = self.arguments[0]
+            self.arguments = self.arguments[1:]
+
+        if isinstance(self.func, Name):
+            self.func = self.func.eval(env)
+            if not isinstance(self.func, Name):
+                return self.eval(env)
+
+        result = self.func.eval(env)
+        return result.eval(env)
 
     def condition(self, env):
-        return True
-
+        return self.func.eval(env).condition(env)
 
 
 class Integer(ASTNode):
@@ -185,7 +183,6 @@ class Integer(ASTNode):
         return self.value != 0
 
 
-
 class Name(ASTNode):
     def __init__(self, value):
         self.value = value
@@ -200,8 +197,8 @@ class Name(ASTNode):
             return self
 
     def condition(self, env):
-        return True
-
+        if self.value in env:
+            return env[self.value].condition(env)
 
 
 
@@ -222,7 +219,9 @@ class Record(ASTNode):
     def add_pair(self, pair):
         self.pairs.append(pair)
 
-    def eval(self, env, args=None):
+    def eval(self, env):
+        for pair in self.pairs:
+            env[pair.name.value] = pair.expr
         return self
 
     def condition(self, env):
@@ -257,6 +256,13 @@ class PredefinedFunction(ASTNode):
             x = self.arguments[0].eval(env)
             y = self.arguments[1].eval(env)
 
+            """    while type(x) == Apply or type(y) == Apply:
+                if type(x) == Apply:
+                    x = x.eval(env)
+                if type(y) == Apply:
+                    y = y.eval(env)
+            """
+
             if type(x) == Integer and type(y) == Integer:
                 return Integer(self.functions[self.name](x.value, y.value))
 
@@ -265,9 +271,12 @@ class PredefinedFunction(ASTNode):
 
         elif len(self.arguments) == 3:
             condition = self.arguments[0].condition(env)
-            return self.functions[self.name](condition, self.arguments[1].eval(env), self.arguments[2].eval(env))
+            if condition:
+                return self.arguments[1].eval(env)
+            else:
+                return self.arguments[2].eval(env)
         else:
             raise Exception(f"Wrong number of arguments for {self.name}")
 
     def condition(self, env):
-        return True
+        return self.eval(env).condition(env)

@@ -23,17 +23,35 @@ class InterpreterTest(unittest.TestCase):
 
     def test_eval_record_not_reducible(self):
         self.assertEqual(
-            self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}"), "{a=x->y->add(mult x x)y, b=a 2, c=b 3}"
+            # our currrent outcome is: {a = (x -> (y -> (add (mult x x ) y ))), b = (a 2), c = (b 3)}
+             "{a=x->y->add(mult x x)y, b=a 2, c=b 3}",self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}").strip()
         )
 
     def test_eval_record_reducible(self):
         self.assertEqual("(y -> add 9 y)", (self._interpreter.interpret_string("(x->y->add(mult x x)y) 3")))
 
     def test_eval_record_environment(self):
-        self.assertEqual(self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}minus(b 5)c") , 2)
+        self.assertEqual(self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}minus(b 5)c") , "2")
 
     def test_minus_params_functions(self):
         self.assertEqual("2", self._interpreter.interpret_string("minus ((x -> y -> add (mult x x) y) 2 5) ((x -> y -> add (mult x x) y) 2 3)"))
+
+    def test_record_easy(self):
+        self.assertEqual(self._interpreter.interpret_string("{a = 1, b = 2} a"), "1")
+
+    def test_record_function_easy(self):
+        self.assertEqual(self._interpreter.interpret_string("{a = x -> add x 1} a 1"), "2")
+
+    def test_recursion_factorial(self):
+        self.assertEqual(self._interpreter.interpret_string("""
+        {
+            factorial = n ->
+                cond (minus n 1)
+                    (mult n (factorial (minus n 1)))
+                    1
+        }
+        factorial 5
+        """), "120")
 
     def test_eval_large_example(self):
         expr = """

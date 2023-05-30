@@ -46,8 +46,14 @@ class Interpreter:
 
 def main():
     interpreter = Interpreter()
-    print(interpreter.interpret_string("""minus ((x -> y -> add (mult x x) y) 2 5) ((x -> y -> add (mult x x) y) 2 3)"""))
-    # print(interpreter.interpret_string("""add 2 2 """))
+    #print(interpreter.interpret_string("""minus ((x -> y ->  add (mult x x) y) 2 5) ((x -> y -> add (mult x x) y) 2 3)"""))
+    print(interpreter.interpret_string("""
+{
+append = x1->y1->cond x1 {head=x1 head, tail=append(x1 tail)y1} y1,
+gen = x2->cond x2 (append (gen(minus x2 1)) {head=x2, tail={}}) {}
+}
+gen 3
+    """))
 
 
 if __name__ == "__main__":
