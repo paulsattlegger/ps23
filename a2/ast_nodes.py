@@ -1,71 +1,4 @@
-"""
-AST for grammar:
 
-<expr> ::= <apply>
-          | <name> '->' <expr>
-
-<apply> ::= <basic>
-            | <apply> <basic>
-
-<basic> ::= <integer>
-            | <name>
-            | '(' <expr> ')'
-            | '{' [<pairs>] '}'
-
-<pairs> ::= <name> '=' <expr>
-            | <pairs> ',' <name> '=' <expr>
-
-Mapping between those and the classes below:
-<expr>         -> parse_expr()
-    -> <apply>
-    -> <name> '->' <expr>
-        -> parse_name()
-        -> eat(TokenType.ARROW)
-        -> parse_expr()
-
-<apply>        -> parse_apply()
-    -> basically parses basics until there are no more basics to parse, and then returns an Apply object with the other basics
-    as arguments, since an <apply> is basically just a list of basics, where the first basic is the function/recorrds/name
-    and the rest are arguments
-
-<basic>        -> parse_basic()
-    -> <integer>
-        -> eat(TokenType.INTEGER)
-    -> <name>
-        -> parse_name()
-    -> '(' <expr> ')'
-        -> eat(TokenType.LPAREN)
-        -> parse_expr()
-        -> eat(TokenType.RPAREN)
-    -> '{' [<pairs>] '}'
-        -> eat(TokenType.LBRACE)
-        -> parse_pairs()
-        -> eat(TokenType.RBRACE)
-
-<pairs>        -> parse_pairs()
-    -> <name> '=' <expr>
-        -> parse_name()
-        -> eat(TokenType.EQUALS)
-        -> parse_expr()
-    -> <pairs> ',' <name> '=' <expr>
-        -> parse_pairs()
-        -> eat(TokenType.COMMA)
-        -> parse_name()
-        -> eat(TokenType.EQUALS)
-        -> parse_expr()
-
-<name>         -> parse_name()
-    -> eat(TokenType.NAME)
-
-<integer>      -> TokenType.INTEGER
-"->"           -> TokenType.ARROW
-"="            -> TokenType.EQUALS
-","            -> TokenType.COMMA
-"("            -> TokenType.LPAREN
-")"            -> TokenType.RPAREN
-"{"            -> TokenType.LBRACE
-"}"            -> TokenType.RBRACE
-"""
 import copy
 from typing import Dict
 
@@ -261,6 +194,8 @@ class PredefinedFunction(ASTNode):
         "div": lambda x, y: x / y,
         "sub": lambda x, y: x - y,
         "cond": lambda x, y, z: y if x else z,
+        "le": lambda x, y: x <= y,
+        "ge": lambda x, y: x >= y,
     }
 
     def __init__(self, name, arguments):

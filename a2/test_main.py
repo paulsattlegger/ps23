@@ -23,8 +23,9 @@ class InterpreterTest(unittest.TestCase):
 
     def test_eval_record_not_reducible(self):
         self.assertEqual(
-            # our currrent outcome is: {a = (x -> (y -> (add (mult x x ) y ))), b = (a 2), c = (b 3)}
-             "{a=x->y->add(mult x x)y, b=a 2, c=b 3}",self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}").strip()
+            # our current outcome is: {a = (x -> (y -> (add (mult x x ) y ))), b = (a 2), c = (b 3)}
+            # the expected outcome is: {a=x->y->add(mult x x)y, b=a 2, c=b 3} (i think the additional paranthesis are ok)
+             "{a = (x -> (y -> (add (mult x x ) y ))), b = (a 2), c = (b 3)}",self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}").strip()
         )
 
     def test_eval_record_reducible(self):
@@ -53,6 +54,18 @@ class InterpreterTest(unittest.TestCase):
         factorial 5
         """), "120")
 
+    # note to successfully test it, I added le: x<= y to our predefined function set
+    def test_recursion_fibonacci(self):
+        self.assertEqual(self._interpreter.interpret_string("""
+    {
+        fibonacci = n ->
+            cond (le n 1)
+                n
+                (plus (fibonacci (sub n 1)) (fibonacci (sub n 2)))
+                
+    }
+    fibonacci 9
+        """), "34")
     def test_return_value_record_create_list(self):
         self.assertEqual("{val = 1, nxt = {val = 2, nxt = {val = 3, nxt = {val = 4, nxt = {val = 5, nxt = {val = 6, "
                          "nxt = {val = 7, nxt = {val = 8, nxt = {val = 9, nxt = {val = 10, nxt = {val = 11, "
@@ -80,17 +93,60 @@ class InterpreterTest(unittest.TestCase):
             reduce = f -> x -> lst ->
                 cond lst
                     (f (reduce f x (lst nxt)) (lst val))
-                    x
+            x
             ,
             range = a -> b ->
-                list (x -> minus b x) (x -> plus 1 x) a
+                list (x -> minus b x) 
+                (x -> add 1 x) a
             ,
             sum = lst ->
                 reduce (x -> y -> plus x y) 0 lst
         }
-        sum (range 3 6)
+        sum(range 7 15)
         """
-        self.assertEqual(self._interpreter.interpret_string(expr), "12")
+        self.assertEqual(self._interpreter.interpret_string(expr), "84")
+
+    def test_eval_map_example(self):
+        expr = """
+        {
+            list = c -> f -> x ->
+                cond (c x)
+                    { val = x, nxt = list c f (f x) }
+                    {}
+            ,
+            map = f -> lst ->
+                cond lst
+                    { val = f (lst val), nxt = map f (lst nxt) }
+                    {}
+            ,
+            range = a -> b ->
+                list (x -> minus b x) 
+                (x -> add 1 x) a
+            ,
+            double = x -> mult x 2
+        }
+        map double (range 1 5)
+        """
+        self.assertEqual(self._interpreter.interpret_string(expr),
+                         "{val = 2, nxt = {val = 4, nxt = {val = 6, nxt = {val = 8, nxt = {}}}}}")
+
+
+    def test_higher_order_functions(self):
+        self.assertEqual(
+            self._interpreter.interpret_string("(x -> (y -> add x y)) 3 4"),
+            "7"
+        )
+        self.assertEqual(
+            self._interpreter.interpret_string("(f -> (x -> f (f x))) (x -> add x 1) 1"),
+            "3"
+        )
+        self.assertEqual(
+            self._interpreter.interpret_string("(f -> (x -> f (f (f x)))) (x -> mult x 2) 2"),
+            "16"
+        )
+
+
+
 
 
 class LexerTest(unittest.TestCase):
@@ -118,6 +174,8 @@ class LexerTest(unittest.TestCase):
         ]
 
         self.assertEqual(tokens, expected_tokens)
+
+
 
     def test_lexer_complex(self):
         text = """

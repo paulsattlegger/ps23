@@ -65,7 +65,7 @@ list (x -> minus b x) (x -> add 1 x) a
 sum = lst ->
 reduce (x -> y -> plus x y) 0 lst
 }
-sum(range 3 15)
+sum(range 7 15)
     """))
 
 
