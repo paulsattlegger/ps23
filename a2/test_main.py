@@ -53,6 +53,21 @@ class InterpreterTest(unittest.TestCase):
         factorial 5
         """), "120")
 
+    def test_return_value_record_create_list(self):
+        self.assertEqual("{val = 1, nxt = {val = 2, nxt = {val = 3, nxt = {val = 4, nxt = {val = 5, nxt = {val = 6, "
+                         "nxt = {val = 7, nxt = {val = 8, nxt = {val = 9, nxt = {val = 10, nxt = {val = 11, "
+                         "nxt = {val = 12, nxt = {val = 13, nxt = {val = 14, nxt = {}}}}}}}}}}}}}}}",
+                         self._interpreter.interpret_string("""
+                         {
+                               list = c -> f -> x ->
+                            cond (c x)
+                            { val = x, nxt = list c f (f x) }
+                            {}
+                            ,range = a -> b ->
+                            list (x -> minus b x) (x -> add 1 x) a
+                            } range 1 15
+                         """))
+
     def test_eval_large_example(self):
         expr = """
         {

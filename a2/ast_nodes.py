@@ -69,6 +69,7 @@ Mapping between those and the classes below:
 import copy
 from typing import Dict
 
+
 class ASTNode:
     def __str__(self):
         return ''
@@ -115,14 +116,21 @@ class FunctionDeclaration(ASTNode):
                 for arg in self.args:
                     self.expr.add_argument(arg)
             body_evaluated = self.expr.eval(updated_env)
+
+            if type(body_evaluated) == Record:
+                body_evaluated = body_evaluated.eval_pairs(updated_env)
+                return body_evaluated
+
             return body_evaluated
 
         # no argument given, return function as is
         body = self.expr.eval(updated_env)
+
+
         return FunctionDeclaration(self.param, body)
 
     def condition(self, env):
-        return True
+        return self.expr.eval(env).condition(env)
 
 
 class Apply(ASTNode):
@@ -150,7 +158,10 @@ class Apply(ASTNode):
                 apply.add_argument(arg)
 
             return apply.eval(env)
-        if isinstance(self.func, Record):
+        if isinstance(self.func, Record) and len(self.arguments) > 0:
+            """
+            A record followed by an expression is a environment update
+            """
             record = self.func.eval(env)
             if not self.arguments:
                 return record
@@ -166,7 +177,7 @@ class Apply(ASTNode):
         return result.eval(env)
 
     def condition(self, env):
-        return self.func.eval(env).condition(env)
+        return self.eval(env).condition(env)
 
 
 class Integer(ASTNode):
@@ -201,7 +212,6 @@ class Name(ASTNode):
             return env[self.value].condition(env)
 
 
-
 class Pair(ASTNode):
     def __init__(self, name, expr):
         self.name = name
@@ -222,6 +232,11 @@ class Record(ASTNode):
     def eval(self, env):
         for pair in self.pairs:
             env[pair.name.value] = pair.expr
+        return self
+
+    def eval_pairs(self, env):
+        for pair in self.pairs:
+            pair.expr = pair.expr.eval(env)
         return self
 
     def condition(self, env):
@@ -255,13 +270,6 @@ class PredefinedFunction(ASTNode):
         if len(self.arguments) == 2:
             x = self.arguments[0].eval(env)
             y = self.arguments[1].eval(env)
-
-            """    while type(x) == Apply or type(y) == Apply:
-                if type(x) == Apply:
-                    x = x.eval(env)
-                if type(y) == Apply:
-                    y = y.eval(env)
-            """
 
             if type(x) == Integer and type(y) == Integer:
                 return Integer(self.functions[self.name](x.value, y.value))

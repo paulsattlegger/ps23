@@ -32,8 +32,8 @@ class Interpreter:
         return self.eval()
 
     def eval(self):
-        return str(self._ast.eval(self.environment))
-
+        result = str(self._ast.eval(self.environment))
+        return result
     @staticmethod
     def read_file(path) -> str:
         with open(path, "r") as f:
@@ -49,8 +49,8 @@ def main():
     #print(interpreter.interpret_string("""minus ((x -> y ->  add (mult x x) y) 2 5) ((x -> y -> add (mult x x) y) 2 3)"""))
     print(interpreter.interpret_string("""
 {
-append = x1->y1->cond x1 {head=x1 head, tail=append(x1 tail)y1} y1,
-gen = x2->cond x2 (append (gen(minus x2 1)) {head=x2, tail={}}) {}
+append = x->y->cond x {head=x head, tail=append(x tail)y} y,
+gen = x->cond x (append(gen(minus x 1)) {head=x, tail={}}) {}
 }
 gen 3
     """))
