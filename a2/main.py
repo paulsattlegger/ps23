@@ -49,10 +49,23 @@ def main():
     #print(interpreter.interpret_string("""minus ((x -> y ->  add (mult x x) y) 2 5) ((x -> y -> add (mult x x) y) 2 3)"""))
     print(interpreter.interpret_string("""
 {
-append = x->y->cond x {head=x head, tail=append(x tail)y} y,
-gen = x->cond x (append(gen(minus x 1)) {head=x, tail={}}) {}
+list = c -> f -> x ->
+cond (c x)
+{ val = x, nxt = list c f (f x) }
+{}
+,
+reduce = f -> x -> lst ->
+cond lst
+(f (reduce f x (lst nxt)) (lst val))
+x
+,
+range = a -> b ->
+list (x -> minus b x) (x -> add 1 x) a
+,
+sum = lst ->
+reduce (x -> y -> plus x y) 0 lst
 }
-gen 3
+sum(range 3 15)
     """))
 
 

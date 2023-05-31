@@ -107,7 +107,12 @@ class FunctionDeclaration(ASTNode):
 
         updated_env = copy.deepcopy(env)
         if len(self.args) > 0:
-            updated_env[self.param.value] = self.args[0].eval(env)
+            if type(self.args[0]) == Record:
+                arg = self.args[0].eval_pairs(env)
+            else:
+                arg = self.args[0].eval(env)
+
+            updated_env[self.param.value] = arg
             self.args = self.args[1:]
             # function has multiple arguments, i.e. higher order function
             if type(self.expr) == FunctionDeclaration and len(self.args) > 0:
@@ -118,6 +123,7 @@ class FunctionDeclaration(ASTNode):
             body_evaluated = self.expr.eval(updated_env)
 
             if type(body_evaluated) == Record:
+                """result of function is record, evaluate it"""
                 body_evaluated = body_evaluated.eval_pairs(updated_env)
                 return body_evaluated
 
@@ -125,8 +131,6 @@ class FunctionDeclaration(ASTNode):
 
         # no argument given, return function as is
         body = self.expr.eval(updated_env)
-
-
         return FunctionDeclaration(self.param, body)
 
     def condition(self, env):
@@ -174,6 +178,7 @@ class Apply(ASTNode):
                 return self.eval(env)
 
         result = self.func.eval(env)
+
         return result.eval(env)
 
     def condition(self, env):
@@ -237,6 +242,7 @@ class Record(ASTNode):
     def eval_pairs(self, env):
         for pair in self.pairs:
             pair.expr = pair.expr.eval(env)
+            env[pair.name.value] = pair.expr
         return self
 
     def condition(self, env):
@@ -266,10 +272,11 @@ class PredefinedFunction(ASTNode):
         return str(self.name) + " " + " ".join([str(arg) for arg in self.arguments])
 
     def eval(self, env: Dict[str, "ASTNode"]):
+        updated_env = copy.deepcopy(env)
 
         if len(self.arguments) == 2:
-            x = self.arguments[0].eval(env)
-            y = self.arguments[1].eval(env)
+            x = self.arguments[0].eval(updated_env)
+            y = self.arguments[1].eval(updated_env)
 
             if type(x) == Integer and type(y) == Integer:
                 return Integer(self.functions[self.name](x.value, y.value))
@@ -278,11 +285,11 @@ class PredefinedFunction(ASTNode):
             return PredefinedFunction(self.name, [x, y])
 
         elif len(self.arguments) == 3:
-            condition = self.arguments[0].condition(env)
+            condition = self.arguments[0].condition(updated_env)
             if condition:
-                return self.arguments[1].eval(env)
+                return self.arguments[1].eval(updated_env)
             else:
-                return self.arguments[2].eval(env)
+                return self.arguments[2].eval(updated_env)
         else:
             raise Exception(f"Wrong number of arguments for {self.name}")
 

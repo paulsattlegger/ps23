@@ -59,11 +59,12 @@ class InterpreterTest(unittest.TestCase):
                          "nxt = {val = 12, nxt = {val = 13, nxt = {val = 14, nxt = {}}}}}}}}}}}}}}}",
                          self._interpreter.interpret_string("""
                          {
-                               list = c -> f -> x ->
+                        list = c -> f -> x ->
                             cond (c x)
                             { val = x, nxt = list c f (f x) }
                             {}
-                            ,range = a -> b ->
+                            ,
+                     range = a -> b ->
                             list (x -> minus b x) (x -> add 1 x) a
                             } range 1 15
                          """))
