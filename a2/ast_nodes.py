@@ -259,6 +259,7 @@ class PredefinedFunction(ASTNode):
         "minus": lambda x, y: x - y,
         "mult": lambda x, y: x * y,
         "div": lambda x, y: x / y,
+        "sub": lambda x, y: x - y,
         "cond": lambda x, y, z: y if x else z,
     }
 

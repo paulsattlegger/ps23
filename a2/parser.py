@@ -53,7 +53,7 @@ class ASTBuilder:
 
     def parse_name(self):
         name = self.current_token.value
-        if name in ["add", "minus", "mult", "div", "cond", "plus"]:
+        if name in ["add", "minus", "mult", "div", "cond", "plus", "sub"]:
             self.eat(TokenType.NAME)
             args = []
             if name != "cond":
