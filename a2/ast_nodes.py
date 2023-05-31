@@ -1,8 +1,9 @@
 import copy
+from abc import ABC
 from typing import Dict
 
 
-class ASTNode:
+class ASTNode(ABC):
     """
     Abstract base class for all AST nodes.
     """
@@ -102,7 +103,7 @@ class FunctionDeclaration(ASTNode):
 
 class Apply(ASTNode):
     """
-    Represents an application of a expression in the AST.
+    Represents an application of an expression in the AST.
     """
 
     def __init__(self, func):
@@ -307,7 +308,7 @@ class PredefinedFunction(ASTNode):
             else:
                 return self.arguments[2].eval(updated_env)
         else:
-            raise Exception(f"Wrong number of arguments for {self.name}")
+            raise ValueError(f"Wrong number of arguments for {self.name}")
 
     def condition(self, env):
         """
