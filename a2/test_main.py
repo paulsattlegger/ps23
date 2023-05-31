@@ -19,23 +19,25 @@ class InterpreterTest(unittest.TestCase):
         self.assertEqual("2", (self._interpreter.interpret_string("cond 0 1 2")))
 
     def test_eval_complex(self):
-        self.assertEqual( "7", (self._interpreter.interpret_string("(x -> y -> add (mult x x) y) 2 3")))
+        self.assertEqual("7", (self._interpreter.interpret_string("(x -> y -> add (mult x x) y) 2 3")))
 
     def test_eval_record_not_reducible(self):
         self.assertEqual(
             # our current outcome is: {a = (x -> (y -> (add (mult x x ) y ))), b = (a 2), c = (b 3)}
             # the expected outcome is: {a=x->y->add(mult x x)y, b=a 2, c=b 3} (i think the additional paranthesis are ok)
-             "{a = (x -> (y -> (add (mult x x ) y ))), b = (a 2), c = (b 3)}",self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}").strip()
+            "{a = (x -> (y -> (add (mult x x ) y ))), b = (a 2), c = (b 3)}",
+            self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}").strip()
         )
 
     def test_eval_record_reducible(self):
         self.assertEqual("(y -> add 9 y)", (self._interpreter.interpret_string("(x->y->add(mult x x)y) 3")))
 
     def test_eval_record_environment(self):
-        self.assertEqual(self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}minus(b 5)c") , "2")
+        self.assertEqual(self._interpreter.interpret_string("{a=x->y->add(mult x x)y, b=a 2, c=b 3}minus(b 5)c"), "2")
 
     def test_minus_params_functions(self):
-        self.assertEqual("2", self._interpreter.interpret_string("minus ((x -> y -> add (mult x x) y) 2 5) ((x -> y -> add (mult x x) y) 2 3)"))
+        self.assertEqual("2", self._interpreter.interpret_string(
+            "minus ((x -> y -> add (mult x x) y) 2 5) ((x -> y -> add (mult x x) y) 2 3)"))
 
     def test_record_easy(self):
         self.assertEqual(self._interpreter.interpret_string("{a = 1, b = 2} a"), "1")
@@ -66,6 +68,7 @@ class InterpreterTest(unittest.TestCase):
     }
     fibonacci 9
         """), "34")
+
     def test_return_value_record_create_list(self):
         self.assertEqual("{val = 1, nxt = {val = 2, nxt = {val = 3, nxt = {val = 4, nxt = {val = 5, nxt = {val = 6, "
                          "nxt = {val = 7, nxt = {val = 8, nxt = {val = 9, nxt = {val = 10, nxt = {val = 11, "
@@ -77,7 +80,7 @@ class InterpreterTest(unittest.TestCase):
                             { val = x, nxt = list c f (f x) }
                             {}
                             ,
-                     range = a -> b ->
+                         range = a -> b ->
                             list (x -> minus b x) (x -> add 1 x) a
                             } range 1 15
                          """))
@@ -130,7 +133,6 @@ class InterpreterTest(unittest.TestCase):
         self.assertEqual(self._interpreter.interpret_string(expr),
                          "{val = 2, nxt = {val = 4, nxt = {val = 6, nxt = {val = 8, nxt = {}}}}}")
 
-
     def test_higher_order_functions(self):
         self.assertEqual(
             self._interpreter.interpret_string("(x -> (y -> add x y)) 3 4"),
@@ -144,9 +146,6 @@ class InterpreterTest(unittest.TestCase):
             self._interpreter.interpret_string("(f -> (x -> f (f (f x)))) (x -> mult x 2) 2"),
             "16"
         )
-
-
-
 
 
 class LexerTest(unittest.TestCase):
@@ -174,8 +173,6 @@ class LexerTest(unittest.TestCase):
         ]
 
         self.assertEqual(tokens, expected_tokens)
-
-
 
     def test_lexer_complex(self):
         text = """

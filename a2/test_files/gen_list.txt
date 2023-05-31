@@ -1,0 +1,9 @@
+{
+                        list = c -> f -> x ->
+                            cond (c x)
+                            { val = x, nxt = list c f (f x) }
+                            {}
+                            ,
+                         range = a -> b ->
+                            list (x -> minus b x) (x -> add 1 x) a
+} range 1 15

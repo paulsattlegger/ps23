@@ -1,9 +1,12 @@
-from enum import Enum
 import re
+from enum import Enum
 from typing import Iterable
 
 
 class TokenType(Enum):
+    """
+        Enum class representing the types of tokens in the lexer.
+    """
     INTEGER = 'INTEGER'
     ARROW = 'ARROW'
     LPAREN = 'LPAREN'
@@ -18,6 +21,13 @@ class TokenType(Enum):
 
 class Token:
     def __init__(self, type: TokenType, value: str) -> None:
+        """
+        Initializes a Token instance.
+
+        Args:
+            type: The TokenType of the token.
+            value: The value of the token.
+        """
         self.type = type
         self.value = value
 
@@ -35,11 +45,26 @@ class Token:
 
 class Lexer:
 
-    def __init__(self, text):
-        self.text = text
-        self.pos = 0
+    def __init__(self, text: str) -> None:
+        """
+        Initializes the Lexer with the input text.
+
+        Args:
+            text: The text to tokenize.
+        """
+        self.text: str = text
+        self.pos: int = 0
 
     def get_next_token(self) -> Token:
+        """
+        Retrieves the next token from the input text.
+
+        Returns:
+            The next Token object.
+
+        Raises:
+            Exception: If an invalid character/token is encountered.
+        """
         while self.pos < len(self.text):
             if self.text[self.pos].isspace():
                 self.pos += 1
@@ -81,6 +106,13 @@ class Lexer:
         return Token(TokenType.EOF, "EOF")
 
     def tokens(self) -> Iterable[Token]:
+        """
+        Returns an iterator over the tokens in the input text.
+
+        Yields:
+            The next Token object.
+
+        """
         while True:
             token = self.get_next_token()
             if token.type == TokenType.EOF:
@@ -88,9 +120,21 @@ class Lexer:
             yield token
 
     def tokens_as_list(self) -> list[Token]:
+        """
+        Returns a list of tokens in the input text.
+
+        Returns:
+            A list of Token objects representing the tokens in the input text.
+        """
         return list(self.tokens())
 
-    def peek_next_token(self):
+    def peek_next_token(self) -> Token:
+        """
+        Returns the next token without consuming it.
+
+        Returns:
+            The next Token object.
+        """
         current_pos = self.pos
         next_token = self.get_next_token()
         self.pos = current_pos

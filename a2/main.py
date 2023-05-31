@@ -1,19 +1,27 @@
 from a2.lexer import Lexer
-from a2.parser import ASTBuilder, FunctionDeclaration, Apply, Integer, Pair, PredefinedFunction, Record, \
-    ASTNode
+from a2.parser import ASTBuilder, ASTNode
 
 
 class Interpreter:
+    """
+        The interpreter class is responsible for interpreting the AST. (i.e. it calls the lexer and parser and then
+        evaluates the AST).
+        It is the main entry point for the interpreter.
+    """
 
-    def __init__(self):
-        self._file_content = None
+    def __init__(self) -> None:
+        self._file_content: str = ""
         self._lexer = None
         self._parser = None
         self._ast = None
-
         self.environment = {}
 
-    def interpret(self, path: str):
+    def interpret(self, path: str) -> str:
+        """
+        Interprets the file at the given path.
+        :param path: a path to a file.
+        :return: evaluated result of the file.
+        """
         self._file_content = self.read_file(path)
         self._lexer = Lexer(self._file_content)
         self._parser = ASTBuilder(self._lexer)
@@ -22,7 +30,12 @@ class Interpreter:
         self.environment = {}
         return self.eval()
 
-    def interpret_string(self, string: str):
+    def interpret_string(self, string: str) -> str:
+        """
+        Interprets the given string.
+        :param string: holding the code to be interpreted.
+        :return: evaluated string
+        """
         self._file_content = string
         self._lexer = Lexer(self._file_content)
         self._parser = ASTBuilder(self._lexer)
@@ -34,6 +47,7 @@ class Interpreter:
     def eval(self):
         result = str(self._ast.eval(self.environment))
         return result
+
     @staticmethod
     def read_file(path) -> str:
         with open(path, "r") as f:
@@ -46,27 +60,7 @@ class Interpreter:
 
 def main():
     interpreter = Interpreter()
-    #print(interpreter.interpret_string("""minus ((x -> y ->  add (mult x x) y) 2 5) ((x -> y -> add (mult x x) y) 2 3)"""))
-    print(interpreter.interpret_string("""
-{
-list = c -> f -> x ->
-cond (c x)
-{ val = x, nxt = list c f (f x) }
-{}
-,
-reduce = f -> x -> lst ->
-cond lst
-(f (reduce f x (lst nxt)) (lst val))
-x
-,
-range = a -> b ->
-list (x -> minus b x) (x -> add 1 x) a
-,
-sum = lst ->
-reduce (x -> y -> plus x y) 0 lst
-}
-sum(range 7 15)
-    """))
+    print(interpreter.interpret("test_files/map.txt"))
 
 
 if __name__ == "__main__":

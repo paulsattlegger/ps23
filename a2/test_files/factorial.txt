@@ -1,0 +1,7 @@
+{
+            factorial = n ->
+                cond (minus n 1)
+                    (mult n (factorial (minus n 1)))
+                    1
+}
+factorial 5

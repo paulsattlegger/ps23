@@ -1,0 +1,18 @@
+        {
+            list = c -> f -> x ->
+                cond (c x)
+                    { val = x, nxt = list c f (f x) }
+                    {}
+            ,
+            map = f -> lst ->
+                cond lst
+                    { val = f (lst val), nxt = map f (lst nxt) }
+                    {}
+            ,
+            range = a -> b ->
+                list (x -> minus b x)
+                (x -> add 1 x) a
+            ,
+            double = x -> mult x 2
+        }
+        map double (range 1 5)

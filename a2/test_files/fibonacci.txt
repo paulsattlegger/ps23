@@ -1,0 +1,8 @@
+{
+        fibonacci = n ->
+            cond (le n 1)
+                n
+                (plus (fibonacci (sub n 1)) (fibonacci (sub n 2)))
+
+}
+fibonacci 15
