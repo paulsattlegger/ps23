@@ -1,6 +1,5 @@
-module Lib
-    ( someFunc
-    ) where
+module Lib (init2) where
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+init2 :: String -> String
+init2 "" = ""
+init2 cs = init cs

@@ -25,6 +25,9 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , brick
+    , microlens-platform
+    , vty
   default-language: Haskell2010
 
 executable a3-exe
@@ -37,6 +40,9 @@ executable a3-exe
   build-depends:
       a3
     , base >=4.7 && <5
+    , brick
+    , microlens-platform
+    , vty
   default-language: Haskell2010
 
 test-suite a3-test
@@ -50,4 +56,7 @@ test-suite a3-test
   build-depends:
       a3
     , base >=4.7 && <5
+    , brick
+    , microlens-platform
+    , vty
   default-language: Haskell2010
