@@ -16,21 +16,29 @@ import Lens.Micro.Platform
 import Lib
 import Parser
 
+-- TODO: Load and store text
+-- TODO: Bool for file chooser
+-- TODO: Document everything
 data EditorState n = EditorState {_text :: String, _index :: Int}
 
 makeLenses ''EditorState
 
+-- TODO: Display cursor above parsed output
 drawUI :: EditorState () -> [T.Widget ()]
 drawUI s = [ui]
   where
     (before, after) = splitAt (s ^. index) (s ^. text)
+    ast = parseString (s ^. text)
     ui = 
       withAttr (A.attrName "highlight") (hCenter $ str "Syntax-Aware Editor")
-          <=> case parseString (s ^. text) of
+          <=> strWrap (before ++ "_" ++ after)
+          <=> case ast of
             Just expr -> exprToWidget expr
-            Nothing -> strWrap (before ++ "_" ++ after)
+            Nothing -> str ""
+    -- TODO: Status bar with parsing error
 
--- recursive function to build the colored text widget
+-- Recursive function to build the colored text widget
+-- TODO: Fix parser output; should be (x -> y -> add (mult x x) y) 2 3 for initial state below
 exprToWidget :: Expr -> T.Widget n
 exprToWidget (Apply a) = applyToWidget a
 exprToWidget (Lambda n e) = 
@@ -46,7 +54,9 @@ applyToWidget (Apply' a b) =
 
 basicToWidget :: Basic -> T.Widget n
 basicToWidget (Integer i) = str (show i)
+-- TODO: Add highlighting to name if at cursor position
 basicToWidget (Name n) = str n
+-- TODO: Add highlighting to brace if at cursor position
 basicToWidget (Expr' e) = str "(" <+> exprToWidget e <+> str ")"
 basicToWidget (Pairs ps) = str "{" <+> pairsToWidget ps <+> str "}"
 
