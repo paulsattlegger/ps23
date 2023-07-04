@@ -7,6 +7,8 @@ dependencies:
 - base >= 4.7 && < 5
 - brick
 - microlens-platform
+- megaparsec
+- text
 - vty
 
 ghc-options:
@@ -33,6 +35,9 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - a3
+    when:        
+    - condition: false        
+      other-modules: Paths_a3
 
 tests:
   a3-test:
