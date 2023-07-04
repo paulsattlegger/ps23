@@ -1,9 +1,9 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parser (Apply, Basic, Expr, pExpr) where
+module Parser where
 
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -86,3 +86,8 @@ parens = between (symbol "(") (symbol ")")
 
 braces :: Parser a -> Parser a
 braces = between (symbol "{") (symbol "}")
+
+parseString :: String -> Maybe Expr
+parseString s = case parse pExpr "" (pack s) of
+  Left _ -> Nothing
+  Right expr -> Just expr

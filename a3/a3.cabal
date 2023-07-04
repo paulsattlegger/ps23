@@ -52,7 +52,6 @@ test-suite a3-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      ParserTest
       Paths_a3
   hs-source-dirs:
       test
