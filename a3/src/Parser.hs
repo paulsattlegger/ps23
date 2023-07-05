@@ -1,7 +1,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Parser where
+module Parser (parseString) where
 
 import Data.Text (Text, pack)
 import Data.Void
@@ -11,8 +11,6 @@ import Text.Megaparsec.Char.Lexer qualified as L
 
 type Parser = Parsec Void Text
 
--- TODO: Add source range of tokens
--- TODO: Add left-over handling
 data Expr
   = Apply Apply -- <apply>
   | Lambda Name Expr -- <name> '->' <expr>
@@ -36,7 +34,7 @@ data Pair = Pair Name Expr -- <name> = <expr>
 type Name = String
 
 pExpr :: Parser Expr
-pExpr = 
+pExpr =
   choice
     [ try $ do
         name <- pName
@@ -63,7 +61,7 @@ pBasic =
     ]
 
 pPairs :: Parser [Pair]
-pPairs = sepBy1 pPair (symbol ",")
+pPairs = sepBy pPair (symbol ",")
 
 pPair :: Parser Pair
 pPair = do
@@ -89,7 +87,7 @@ parens = between (symbol "(") (symbol ")")
 braces :: Parser a -> Parser a
 braces = between (symbol "{") (symbol "}")
 
-parseString :: String -> Maybe Expr
+parseString :: String -> String
 parseString s = case parse pExpr "" (pack s) of
-  Left _ -> Nothing
-  Right expr -> Just expr
+  Left bundle -> errorBundlePretty bundle
+  Right _ -> ""

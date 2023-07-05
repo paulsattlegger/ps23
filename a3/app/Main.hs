@@ -1,16 +1,16 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE BlockArguments #-}
 
 module Main (main) where
 
 import Brick.AttrMap qualified as A
 import Brick.Main qualified as M
 import Brick.Types qualified as T
-import Brick.Util (on)
+import Brick.Util (fg, on)
 import Brick.Widgets.Center (hCenter)
-import Brick.Widgets.Core (str, strWrap, withAttr, (<=>), (<+>))
+import Brick.Widgets.Core (Padding (Max), emptyWidget, padTop, str, withAttr, (<+>), (<=>))
 import Control.Monad (void)
+import Data.Char
 import Graphics.Vty qualified as V
 import Lens.Micro.Platform
 import Lib
@@ -25,57 +25,36 @@ makeLenses ''EditorState
 
 -- TODO: Display cursor above parsed output
 drawUI :: EditorState () -> [T.Widget ()]
-drawUI s = [ui]
+drawUI s = [ui, parser]
   where
     (before, after) = splitAt (s ^. index) (s ^. text)
-    ast = parseString (s ^. text)
-    ui = 
+    word = currentWord before after
+    message = parseString (s ^. text)
+    ui =
       withAttr (A.attrName "highlight") (hCenter $ str "Syntax-Aware Editor")
-          <=> strWrap (before ++ "_" ++ after)
-          <=> case ast of
-            Just expr -> exprToWidget expr
-            Nothing -> str ""
-    -- TODO: Status bar with parsing error
+        <=> highlightWord word (before ++ "_" ++ after)
+    parser = padTop Max $ str message
 
--- Recursive function to build the colored text widget
--- TODO: Fix parser output; should be (x -> y -> add (mult x x) y) 2 3 for initial state below
-exprToWidget :: Expr -> T.Widget n
-exprToWidget (Apply a) = applyToWidget a
-exprToWidget (Lambda n e) = 
-  str n
-  <+> str " -> "
-  <+> exprToWidget e
+-- TODO: Status bar with parsing error
 
-applyToWidget :: Apply -> T.Widget n
-applyToWidget (Basic b) = basicToWidget b
-applyToWidget (Apply' a b) = 
-  applyToWidget a
-  <+> basicToWidget b
+splitAlphanumeric :: String -> [String]
+splitAlphanumeric [] = []
+splitAlphanumeric (x : xs)
+  | isAlphaNum x =
+      let (alphanum, rest) = span isAlphaNum (x : xs)
+       in alphanum : splitAlphanumeric rest
+  | otherwise = [x] : splitAlphanumeric xs
 
-basicToWidget :: Basic -> T.Widget n
-basicToWidget (Integer i) = str (show i)
--- TODO: Add highlighting to name if at cursor position
-basicToWidget (Name n) = str n
--- TODO: Add highlighting to brace if at cursor position
-basicToWidget (Expr' e) = str "(" <+> exprToWidget e <+> str ")"
-basicToWidget (Pairs ps) = str "{" <+> pairsToWidget ps <+> str "}"
+highlightWord :: String -> String -> T.Widget n
+-- TODO: Fix "\n", i.e., string -> lines -> vBoxes -> highlight -> hBoxes
+highlightWord word s = foldr ((<+>) . format) emptyWidget (splitAlphanumeric s)
+  where
+    format x
+      | x == word = withAttr (A.attrName "green") (str x)
+      | otherwise = str x
 
-pairToWidget :: Pair -> T.Widget n
-pairToWidget (Pair n e) = 
-  str n
-  <+> str " = "
-  <+> exprToWidget e
-
-pairsToWidget :: [Pair] -> T.Widget n
-pairsToWidget [] = str ""
-pairsToWidget (p:ps) = pairToWidget p <+> (if null ps then str "" else str ", " <+> pairsToWidget ps)
-
-currentWord :: EditorState () -> String
-currentWord s =
-  let text' = s ^. text
-      index' = s ^. index
-      (before, after) = splitAt index' text'
-  in reverse (takeWhile (/= ' ') (reverse before)) ++ takeWhile (/= ' ') after
+currentWord :: String -> String -> String
+currentWord before after = reverse (takeWhile isAlpha (reverse before)) ++ takeWhile isAlpha after
 
 appEvent :: T.BrickEvent () e -> T.EventM () (EditorState ()) ()
 appEvent (T.VtyEvent (V.EvKey e [])) = keyEvent e
@@ -115,7 +94,12 @@ initialState :: EditorState ()
 initialState = EditorState "(x -> y -> add (mult x x) y) 2 3" 0
 
 theMap :: A.AttrMap
-theMap = A.attrMap V.defAttr [(A.attrName "highlight", V.black `on` V.white)]
+theMap =
+  A.attrMap
+    V.defAttr
+    [ (A.attrName "highlight", V.black `on` V.white),
+      (A.attrName "green", fg V.green)
+    ]
 
 editor :: M.App (EditorState ()) e ()
 editor =
