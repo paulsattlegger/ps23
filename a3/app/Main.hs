@@ -1,5 +1,6 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
 
 module Main (main) where
 
@@ -16,6 +17,7 @@ import Graphics.Vty qualified as V
 import Lens.Micro.Platform
 import Lib
 import Parser
+import Data.List (nub)
 
 -- TODO: Load and store text
 -- TODO: Bool for file chooser
@@ -36,6 +38,7 @@ drawUI s = [ui, parser]
     ui =
       withAttr (A.attrName "highlight") (hCenter $ str "Syntax-Aware Editor")
         <=> drawLines word (splitOn "\n" $ before ++ "_" ++ after)
+        <=> highlightBrace (before ++ "_" ++ after)
     parser = padTop Max message
 
 --   Due to a limitation of the 'str' widget, which does not render empty strings,
@@ -60,6 +63,38 @@ splitAlphanumeric (x : xs)
       let (alphanum, rest) = span isAlphaNum (x : xs)
        in alphanum : splitAlphanumeric rest
   | otherwise = [x] : splitAlphanumeric xs
+
+-- Returns a list of tuples that contains the indices of valid braces
+-- From: https://stackoverflow.com/questions/10243290/determining-matching-parenthesis-in-haskell
+parenPairs :: String -> [(Int, Int)]
+parenPairs = go 0 []
+  where
+    go _ _        []         = []
+    go j acc      ('(' : cs) =          go (j + 1) (j : acc) cs
+    go j []       (')' : cs) =          go (j + 1) []        cs -- unbalanced parentheses!
+    go j (i : is) (')' : cs) = (i, j) : go (j + 1) is        cs
+    go j acc      (c   : cs) =          go (j + 1) acc       cs
+
+-- Converts list of index tuples to a set (without duplicates)
+listToSet :: [(Int, Int)] -> [Int]
+listToSet pairs = nub (concatMap (\(start, end) -> [start, end]) pairs)
+
+-- Checks if an index is contained in the list
+indexInList :: Int -> [Int] -> Bool
+indexInList index indices = index `elem` indices
+
+highlightBrace :: String -> T.Widget n
+highlightBrace s = combineWidgets (zipWith (curry formatChar) s [0..])
+  where
+    formatChar (x, i)
+      | x == '(' && not (isIndexInParenPairs i) = withAttr (A.attrName "error") (str [x])
+      | x == ')' && not (isIndexInParenPairs i) = withAttr (A.attrName "error") (str [x])
+      | otherwise = str [x]
+
+    isIndexInParenPairs i = indexInList i (listToSet (parenPairs s))
+
+    combineWidgets []     = emptyWidget
+    combineWidgets (w:ws) = w <+> combineWidgets ws
 
 currentWord :: String -> String -> String
 currentWord before after = reverse (takeWhile isAlpha (reverse before)) ++ takeWhile isAlpha after
