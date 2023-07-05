@@ -11,6 +11,7 @@ import Brick.Util (fg, on)
 import Brick.Widgets.Center (hCenter)
 import Brick.Widgets.Core (Padding (Max), emptyWidget, padTop, str, strWrap, vBox, withAttr, (<+>), (<=>))
 import Control.Monad (void)
+import Control.Applicative ((<|>))
 import Data.Char
 import Graphics.Vty qualified as V
 import Lens.Micro.Platform
@@ -33,13 +34,53 @@ drawUI s = [ui, parser]
     (before, after) = splitAt (s ^. index) (s ^. text)
     word = currentWord before after
     attrList = addDefaultAttr (splitAlphanumeric (before ++ "_" ++ after))
+    braceIndex = getIndexOfBrace attrList before after
     message = case parseString (s ^. text) of
       Left err -> withAttr (A.attrName "error") (strWrap err)
       Right _ -> withAttr (A.attrName "valid") (strWrap "Valid")
     ui =
       withAttr (A.attrName "highlight") (hCenter $ str "Syntax-Aware Editor")
-        <=> drawLines (splitNewlines (highlightBrace $ highlightNameAtCursor word attrList))
+        <=> drawLines (splitNewlines (highlightBrace (highlightBraceAtCursor (highlightNameAtCursor word attrList) braceIndex)))
     parser = padTop Max message
+
+getIndexOfBrace :: [(String, String, Int)] -> String -> String -> Int
+getIndexOfBrace ast before after
+  | null before = -1
+  | last before == '(' = findBraceInAst ast "(" (countBraces before '(')
+  | last before == ')' = findBraceInAst ast ")" (countBraces before ')')
+  | otherwise = -1
+
+countBraces :: String -> Char -> Int
+countBraces xs x = foldl (\count char -> if char == x then count + 1 else count) 0 xs
+
+findBraceInAst :: [(String, String, Int)] -> String -> Int -> Int
+findBraceInAst ast str n = go ast str n 0
+  where
+    go [] _ _ _ = error "String not found enough times in AST"
+    go ((_, x, i):xs) str n count
+      | x == str && count + 1 == n = i
+      | x == str = go xs str n (count + 1)
+      | otherwise = go xs str n count
+
+getMatchingBrace :: [(String, String, Int)] -> Int -> Int
+getMatchingBrace ast i = maybe (error "No matching brace found") id match
+  where
+    pairs = parenPairs ast
+    match = lookup i pairs <|> lookup i (map swap pairs)
+    swap (a, b) = (b, a)
+
+highlightBraceIndex :: (Int, Int) -> [(String, String, Int)] -> [(String, String, Int)]
+highlightBraceIndex (a, b) = map format
+  where
+    format (s, x, i)
+      | i == a = ("yellow", x, i)
+      | i == b = ("yellow", x, i)
+      | otherwise = (s, x, i)
+
+highlightBraceAtCursor :: [(String, String, Int)] -> Int -> [(String, String, Int)]
+highlightBraceAtCursor ast i 
+  | i == -1 = ast 
+  | otherwise = highlightBraceIndex (i, getMatchingBrace ast i) ast
 
 -- Draws each line seperated by "\n" into a new vBox
 drawLines :: [[(String, String, Int)]] -> T.Widget n
@@ -72,6 +113,7 @@ astToWidget [] = emptyWidget
 astToWidget ((s, x, _) : cs)
   | s == "error" = withAttr (A.attrName "error") (str x) <+> astToWidget cs
   | s == "green" = withAttr (A.attrName "green") (str x) <+> astToWidget cs
+  | s == "yellow" = withAttr (A.attrName "yellow") (str x) <+> astToWidget cs
   | otherwise = str x <+> astToWidget cs
 
 splitAlphanumeric :: String -> [String]
@@ -160,6 +202,7 @@ theMap =
     V.defAttr
     [ (A.attrName "highlight", V.black `on` V.white),
       (A.attrName "green", fg V.green),
+      (A.attrName "yellow", V.black `on` V.yellow),
       (A.attrName "valid", V.black `on` V.green),
       (A.attrName "error", V.white `on` V.red)
     ]
