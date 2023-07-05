@@ -8,7 +8,7 @@ import Brick.Main qualified as M
 import Brick.Types qualified as T
 import Brick.Util (fg, on)
 import Brick.Widgets.Center (hCenter)
-import Brick.Widgets.Core (Padding (Max), emptyWidget, padTop, str, withAttr, (<+>), (<=>))
+import Brick.Widgets.Core (Padding (Max), emptyWidget, padTop, str, strWrap, withAttr, (<+>), (<=>))
 import Control.Monad (void)
 import Data.Char
 import Graphics.Vty qualified as V
@@ -29,13 +29,13 @@ drawUI s = [ui, parser]
   where
     (before, after) = splitAt (s ^. index) (s ^. text)
     word = currentWord before after
-    message = parseString (s ^. text)
+    message = case parseString (s ^. text) of
+      Left err -> withAttr (A.attrName "error") (strWrap err)
+      Right expr -> withAttr (A.attrName "valid") (strWrap "Valid")
     ui =
       withAttr (A.attrName "highlight") (hCenter $ str "Syntax-Aware Editor")
         <=> highlightWord word (before ++ "_" ++ after)
-    parser = padTop Max $ str message
-
--- TODO: Status bar with parsing error
+    parser = padTop Max message
 
 splitAlphanumeric :: String -> [String]
 splitAlphanumeric [] = []
@@ -98,7 +98,9 @@ theMap =
   A.attrMap
     V.defAttr
     [ (A.attrName "highlight", V.black `on` V.white),
-      (A.attrName "green", fg V.green)
+      (A.attrName "green", fg V.green),
+      (A.attrName "valid", V.black `on` V.green),
+      (A.attrName "error", V.white `on` V.red)
     ]
 
 editor :: M.App (EditorState ()) e ()

@@ -87,7 +87,7 @@ parens = between (symbol "(") (symbol ")")
 braces :: Parser a -> Parser a
 braces = between (symbol "{") (symbol "}")
 
-parseString :: String -> String
+parseString :: String -> Either String Expr
 parseString s = case parse pExpr "" (pack s) of
-  Left bundle -> errorBundlePretty bundle
-  Right _ -> ""
+  Left err -> Left (errorBundlePretty err)
+  Right expr -> Right expr
