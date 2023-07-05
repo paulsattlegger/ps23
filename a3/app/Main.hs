@@ -32,13 +32,14 @@ drawUI s = [ui, parser]
   where
     (before, after) = splitAt (s ^. index) (s ^. text)
     word = currentWord before after
+    attrList = addDefaultAttr (splitAlphanumeric (before ++ "_" ++ after))
     message = case parseString (s ^. text) of
       Left err -> withAttr (A.attrName "error") (strWrap err)
       Right _ -> withAttr (A.attrName "valid") (strWrap "Valid")
     ui =
       withAttr (A.attrName "highlight") (hCenter $ str "Syntax-Aware Editor")
         <=> drawLines word (splitOn "\n" $ before ++ "_" ++ after)
-        <=> highlightBrace (before ++ "_" ++ after)
+        <=> astToWidget (highlightBrace attrList)
     parser = padTop Max message
 
 --   Due to a limitation of the 'str' widget, which does not render empty strings,
@@ -56,6 +57,16 @@ drawLine word line = foldr ((<+>) . format) emptyWidget (splitAlphanumeric line)
       | x == word = withAttr (A.attrName "green") (str x)
       | otherwise = str x
 
+-- Adds the "default" attribute to each entry of the input list as well as an increasing unique index
+addDefaultAttr :: [String] -> [(String, String, Int)]
+addDefaultAttr strings = zipWith (\str idx -> ("default", str, idx)) strings [0..]
+
+astToWidget :: [(String, String, Int)] -> T.Widget n
+astToWidget [] = emptyWidget
+astToWidget ((s, x, _) : cs)
+  | s == "error" = withAttr (A.attrName "error") (str x) <+> astToWidget cs
+  | otherwise = str x <+> astToWidget cs
+
 splitAlphanumeric :: String -> [String]
 splitAlphanumeric [] = []
 splitAlphanumeric (x : xs)
@@ -64,16 +75,18 @@ splitAlphanumeric (x : xs)
        in alphanum : splitAlphanumeric rest
   | otherwise = [x] : splitAlphanumeric xs
 
+-- Input: [Attr, String, Index]
 -- Returns a list of tuples that contains the indices of valid braces
 -- From: https://stackoverflow.com/questions/10243290/determining-matching-parenthesis-in-haskell
-parenPairs :: String -> [(Int, Int)]
-parenPairs = go 0 []
+parenPairs :: [(String, String, Int)] -> [(Int, Int)]
+parenPairs = go []
   where
-    go _ _        []         = []
-    go j acc      ('(' : cs) =          go (j + 1) (j : acc) cs
-    go j []       (')' : cs) =          go (j + 1) []        cs -- unbalanced parentheses!
-    go j (i : is) (')' : cs) = (i, j) : go (j + 1) is        cs
-    go j acc      (c   : cs) =          go (j + 1) acc       cs
+    go _ [] = []
+    go acc ((_, "(", i) : cs) = go (i : acc) cs
+    go [] ((_, ")", _) : cs) = go [] cs -- unbalanced parentheses!
+    go (i : is) ((_, ")", j) : cs) = (i, j) : go is cs
+    go acc (_ : cs) = go acc cs
+
 
 -- Converts list of index tuples to a set (without duplicates)
 listToSet :: [(Int, Int)] -> [Int]
@@ -83,18 +96,16 @@ listToSet pairs = nub (concatMap (\(start, end) -> [start, end]) pairs)
 indexInList :: Int -> [Int] -> Bool
 indexInList index indices = index `elem` indices
 
-highlightBrace :: String -> T.Widget n
-highlightBrace s = combineWidgets (zipWith (curry formatChar) s [0..])
+
+highlightBrace :: [(String, String, Int)] -> [(String, String, Int)]
+highlightBrace cs = map formatChar cs
   where
-    formatChar (x, i)
-      | x == '(' && not (isIndexInParenPairs i) = withAttr (A.attrName "error") (str [x])
-      | x == ')' && not (isIndexInParenPairs i) = withAttr (A.attrName "error") (str [x])
-      | otherwise = str [x]
+    formatChar (s, x, i)
+      | x == "(" && not (isIndexInParenPairs i) = ("error", x, i)
+      | x == ")" && not (isIndexInParenPairs i) = ("error", x, i)
+      | otherwise = (s, x, i)
 
-    isIndexInParenPairs i = indexInList i (listToSet (parenPairs s))
-
-    combineWidgets []     = emptyWidget
-    combineWidgets (w:ws) = w <+> combineWidgets ws
+    isIndexInParenPairs i = indexInList i (listToSet (parenPairs cs))
 
 currentWord :: String -> String -> String
 currentWord before after = reverse (takeWhile isAlpha (reverse before)) ++ takeWhile isAlpha after
