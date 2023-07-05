@@ -12,7 +12,6 @@ import Brick.Widgets.Center (hCenter)
 import Brick.Widgets.Core (Padding (Max), emptyWidget, padTop, str, strWrap, vBox, withAttr, (<+>), (<=>))
 import Control.Monad (void)
 import Data.Char
-import Data.List.Split
 import Graphics.Vty qualified as V
 import Lens.Micro.Platform
 import Lib
@@ -22,6 +21,7 @@ import Data.List (nub)
 -- TODO: Load and store text
 -- TODO: Bool for file chooser
 -- TODO: Document everything
+-- TODO: Also support "{}" braces
 data EditorState n = EditorState {_text :: String, _index :: Int}
 
 makeLenses ''EditorState
@@ -38,24 +38,30 @@ drawUI s = [ui, parser]
       Right _ -> withAttr (A.attrName "valid") (strWrap "Valid")
     ui =
       withAttr (A.attrName "highlight") (hCenter $ str "Syntax-Aware Editor")
-        <=> drawLines word (splitOn "\n" $ before ++ "_" ++ after)
-        <=> astToWidget (highlightBrace attrList)
+        <=> drawLines (splitNewlines (highlightBrace $ highlightNameAtCursor word attrList))
     parser = padTop Max message
 
---   Due to a limitation of the 'str' widget, which does not render empty strings,
---   lines that are empty are replaced with a single space
---   as a workaround to ensure they are still drawn as blank lines.
-drawLines :: String -> [String] -> T.Widget n
-drawLines word lines' = vBox (map toVBox lines')
-  where
-    toVBox line = if line == "" then str " " else drawLine word line
+-- Draws each line seperated by "\n" into a new vBox
+drawLines :: [[(String, String, Int)]] -> T.Widget n
+drawLines lines' = vBox (map astToWidget lines')
 
-drawLine :: String -> String -> T.Widget n
-drawLine word line = foldr ((<+>) . format) emptyWidget (splitAlphanumeric line)
+-- Splits an AST into seperate lines on a "\n"
+splitNewlines :: [(String, String, Int)] -> [[(String, String, Int)]]
+splitNewlines = go []
   where
-    format x
-      | x == word = withAttr (A.attrName "green") (str x)
-      | otherwise = str x
+    go acc [] = reverse $ map reverse acc
+    go acc ((s, x, i):xs)
+      | x == "\n" = go ([("default", " ", i)]:acc) xs
+      | otherwise = case acc of
+                      []     -> go [[(s, x, i)]] xs
+                      (a:as) -> go (((s, x, i):a):as) xs
+
+highlightNameAtCursor :: String -> [(String, String, Int)] -> [(String, String, Int)]
+highlightNameAtCursor word = map format
+  where
+    format (s, x, i)
+      | x == word = ("green", x, i)
+      | otherwise = (s, x, i)
 
 -- Adds the "default" attribute to each entry of the input list as well as an increasing unique index
 addDefaultAttr :: [String] -> [(String, String, Int)]
@@ -65,6 +71,7 @@ astToWidget :: [(String, String, Int)] -> T.Widget n
 astToWidget [] = emptyWidget
 astToWidget ((s, x, _) : cs)
   | s == "error" = withAttr (A.attrName "error") (str x) <+> astToWidget cs
+  | s == "green" = withAttr (A.attrName "green") (str x) <+> astToWidget cs
   | otherwise = str x <+> astToWidget cs
 
 splitAlphanumeric :: String -> [String]
