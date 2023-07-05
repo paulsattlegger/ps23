@@ -8,9 +8,10 @@ import Brick.Main qualified as M
 import Brick.Types qualified as T
 import Brick.Util (fg, on)
 import Brick.Widgets.Center (hCenter)
-import Brick.Widgets.Core (Padding (Max), emptyWidget, padTop, str, strWrap, withAttr, (<+>), (<=>))
+import Brick.Widgets.Core (Padding (Max), emptyWidget, padTop, str, strWrap, vBox, withAttr, (<+>), (<=>))
 import Control.Monad (void)
 import Data.Char
+import Data.List.Split
 import Graphics.Vty qualified as V
 import Lens.Micro.Platform
 import Lib
@@ -31,11 +32,26 @@ drawUI s = [ui, parser]
     word = currentWord before after
     message = case parseString (s ^. text) of
       Left err -> withAttr (A.attrName "error") (strWrap err)
-      Right expr -> withAttr (A.attrName "valid") (strWrap "Valid")
+      Right _ -> withAttr (A.attrName "valid") (strWrap "Valid")
     ui =
       withAttr (A.attrName "highlight") (hCenter $ str "Syntax-Aware Editor")
-        <=> highlightWord word (before ++ "_" ++ after)
+        <=> drawLines word (splitOn "\n" $ before ++ "_" ++ after)
     parser = padTop Max message
+
+--   Due to a limitation of the 'str' widget, which does not render empty strings,
+--   lines that are empty are replaced with a single space
+--   as a workaround to ensure they are still drawn as blank lines.
+drawLines :: String -> [String] -> T.Widget n
+drawLines word lines' = vBox (map toVBox lines')
+  where
+    toVBox line = if line == "" then str " " else drawLine word line
+
+drawLine :: String -> String -> T.Widget n
+drawLine word line = foldr ((<+>) . format) emptyWidget (splitAlphanumeric line)
+  where
+    format x
+      | x == word = withAttr (A.attrName "green") (str x)
+      | otherwise = str x
 
 splitAlphanumeric :: String -> [String]
 splitAlphanumeric [] = []
@@ -44,14 +60,6 @@ splitAlphanumeric (x : xs)
       let (alphanum, rest) = span isAlphaNum (x : xs)
        in alphanum : splitAlphanumeric rest
   | otherwise = [x] : splitAlphanumeric xs
-
-highlightWord :: String -> String -> T.Widget n
--- TODO: Fix "\n", i.e., string -> lines -> vBoxes -> highlight -> hBoxes
-highlightWord word s = foldr ((<+>) . format) emptyWidget (splitAlphanumeric s)
-  where
-    format x
-      | x == word = withAttr (A.attrName "green") (str x)
-      | otherwise = str x
 
 currentWord :: String -> String -> String
 currentWord before after = reverse (takeWhile isAlpha (reverse before)) ++ takeWhile isAlpha after
