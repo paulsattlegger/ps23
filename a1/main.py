@@ -15,7 +15,6 @@ class Calculator:
         register (dict): A dictionary for storing string tokens as keys and associated data as values.
     """
 
-
     def __init__(self) -> None:
         """
          Initialize a new instance of the Calculator class.
@@ -41,6 +40,7 @@ class Calculator:
             print(f"DATASTACK:\t\t {self.data}")
             print(f"CMD:\t\t\t {self.cmd}")
             print(f"{'-' * 30}\n")
+
 
 def main() -> None:
     """

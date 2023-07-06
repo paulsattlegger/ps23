@@ -1,3 +1,5 @@
+import sys
+
 from a2.lexer import Lexer
 from a2.parser import ASTBuilder, ASTNode
 
@@ -59,8 +61,16 @@ class Interpreter:
 
 
 def main():
+    if len(sys.argv) != 2:
+        print("Usage: python main.py <path-to-file>")
+        return
     interpreter = Interpreter()
-    print(interpreter.interpret("test_files/fibonacci.txt"))
+    try:
+        filename = sys.argv[1]
+        print(interpreter.interpret(filename))
+    except FileNotFoundError:
+        print(f"File {filename} not found.")
+
 
 if __name__ == "__main__":
     main()

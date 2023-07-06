@@ -18,7 +18,6 @@ Classes:
     Execution (OperationMode): Execution mode, performing various operations.
 """
 
-
 ARITHMETIC_OPERATIONS = {
     "+": operator.add,
     "-": operator.sub,
@@ -110,6 +109,7 @@ class DecimalPlaceConstruction(OperationMode):
     """
     Mode for building floating-point values. This mode constructs floating-point numbers digit by digit from the input.
     """
+
     def __init__(self, context: "Calculator") -> None:
         super().__init__(context)
         self.m: int = -2
@@ -169,6 +169,7 @@ class Execution(OperationMode):
     """
     Execution mode, performing various operations like arithmetic operations, comparisons, etc.
     """
+
     def handle(self, token) -> None:
         """
         Handles an incoming token and performs a corresponding operation.
