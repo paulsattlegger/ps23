@@ -15,6 +15,7 @@ import Control.Exception
 import Control.Monad.IO.Class
 import Data.Char
 import Data.Functor
+import Data.Maybe (fromMaybe)
 import Data.List (nub)
 import Graphics.Vty qualified as V
 import Lens.Micro.Platform
@@ -64,7 +65,7 @@ findBraceInAst ast str n = go ast str n 0
       | otherwise = go xs str n count
 
 getMatchingBrace :: [(String, String, Int)] -> Int -> Int
-getMatchingBrace ast i = maybe (error "No matching brace found") id match
+getMatchingBrace ast i = fromMaybe (-1) match
   where
     pairs = parenPairs ast
     match = lookup i pairs <|> lookup i (map swap pairs)
@@ -81,6 +82,7 @@ highlightBraceIndex (a, b) = map format
 highlightBraceAtCursor :: [(String, String, Int)] -> Int -> [(String, String, Int)]
 highlightBraceAtCursor ast i
   | i == -1 = ast
+  | getMatchingBrace ast i == -1 = ast
   | otherwise = highlightBraceIndex (i, getMatchingBrace ast i) ast
 
 -- | 'drawHeader' creates a header widget for the syntax-aware editor.
