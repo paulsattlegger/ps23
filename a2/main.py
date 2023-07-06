@@ -60,8 +60,7 @@ class Interpreter:
 
 def main():
     interpreter = Interpreter()
-    print(interpreter.interpret("test_files/map.txt"))
-
+    print(interpreter.interpret("test_files/fibonacci.txt"))
 
 if __name__ == "__main__":
     main()

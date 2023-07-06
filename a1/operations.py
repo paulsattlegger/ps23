@@ -4,6 +4,21 @@ from string import ascii_lowercase, ascii_uppercase, digits
 
 from stack import Stack
 
+"""
+Calculator Module
+
+This module provides arithmetic and logical operations.
+The operations are defined in a dictionary ARITHMETIC_OPERATIONS, using operator methods.
+
+Classes:
+    OperationMode (ABC): An abstract base class for operation modes in the calculator context.
+    IntegerConstruction (OperationMode): Mode for building integer values.
+    DecimalPlaceConstruction (OperationMode): Mode for building floating-point values.
+    StringConstruction (OperationMode): Mode for building string values.
+    Execution (OperationMode): Execution mode, performing various operations.
+"""
+
+
 ARITHMETIC_OPERATIONS = {
     "+": operator.add,
     "-": operator.sub,
@@ -17,6 +32,16 @@ EPSILON = 1e-9
 
 
 def is_well_formed(string):
+    """
+    Checks if a given string has well-formed brackets, i.e., each opening bracket is matched by a closing one.
+
+    Args:
+        string (str): Input string.
+
+    Returns:
+        bool: True if the string has well-formed brackets, False otherwise.
+    """
+
     stack = []  # Stack to store opening brackets
     for char in string:
         if char == "(":
@@ -29,16 +54,43 @@ def is_well_formed(string):
 
 
 class OperationMode(ABC):
+    """
+    An abstract base class for operation modes in the calculator context.
+    Each mode is responsible for handling a specific token (character) from the input.
+    """
+
     def __init__(self, context: "Calculator") -> None:
+        """
+        Constructor for the OperationMode class.
+
+        Args:
+            context (Calculator): A calculator instance, used as the context for this mode.
+        """
         self._context = context
 
     @abstractmethod
     def handle(self, token) -> None:
+        """
+        Abstract method for handling tokens.
+
+        Args:
+            token: The current token to be processed.
+        """
         pass
 
 
 class IntegerConstruction(OperationMode):
+    """
+    Mode for building integer values. This mode constructs integers digit by digit from the input.
+    """
+
     def handle(self, token) -> None:
+        """
+        Handles an incoming token and constructs an integer value from it.
+
+        Args:
+            token: The current token to be processed.
+        """
         match token:
             case d if d in digits:
                 data = self._context.data.pop()
@@ -55,11 +107,21 @@ class IntegerConstruction(OperationMode):
 
 
 class DecimalPlaceConstruction(OperationMode):
+    """
+    Mode for building floating-point values. This mode constructs floating-point numbers digit by digit from the input.
+    """
     def __init__(self, context: "Calculator") -> None:
         super().__init__(context)
         self.m: int = -2
 
     def handle(self, token) -> None:
+        """
+        Handles an incoming token and constructs a floating-point value from it.
+
+        Args:
+            token: The current token to be processed.
+        """
+
         match token:
             case d if d in digits:
                 data = self._context.data.pop()
@@ -75,11 +137,21 @@ class DecimalPlaceConstruction(OperationMode):
 
 
 class StringConstruction(OperationMode):
+    """
+    Mode for building string values. This mode constructs strings character by character from the input.
+    """
+
     def __init__(self, context: "Calculator"):
         super().__init__(context)
         self._mode: int = 1
 
     def handle(self, token) -> None:
+        """
+        Handles an incoming token and constructs a string value from it.
+
+        Args:
+            token: The current token to be processed.
+        """
         match token:
             case "(":
                 self._mode += 1
@@ -94,7 +166,16 @@ class StringConstruction(OperationMode):
 
 
 class Execution(OperationMode):
+    """
+    Execution mode, performing various operations like arithmetic operations, comparisons, etc.
+    """
     def handle(self, token) -> None:
+        """
+        Handles an incoming token and performs a corresponding operation.
+
+        Args:
+            token: The current token to be processed.
+        """
         match token:
             case "(":
                 self._context.data.push("")
@@ -143,6 +224,11 @@ class Execution(OperationMode):
                 self._context.data.push(len(self._context.data))
 
     def apply_later(self) -> None:
+        """
+        This method retrieves a command from the data stack and schedules it for later application,
+        by pushing it to the left of the command deque. It doesn't return anything.
+        This operation is typically used when the execution of a command needs to be deferred.
+        """
         command = self._context.data.pop()
         if type(command) is not str:
             self._context.data.push(command)
@@ -151,6 +237,12 @@ class Execution(OperationMode):
             self._context.cmd.appendleft(token)
 
     def apply_immediately(self) -> None:
+        """
+        This method retrieves a command from the data stack and applies it immediately,
+        by pushing it to the right of the command deque. It doesn't return anything.
+        This operation is typically used when a command needs to be executed immediately,
+        without waiting for other pending commands.
+        """
         command = self._context.data.pop()
         if type(command) is not str:
             # if it is not a string --> no effect
@@ -161,6 +253,10 @@ class Execution(OperationMode):
             self._context.cmd.push(token)
 
     def delete(self) -> None:
+        """
+        This method removes an item from the data stack at a specific position. It doesn't return anything.
+        This operation is typically used when you want to discard a specific value from the stack.
+        """
         n = self._context.data.pop()
         if type(n) is not int:
             self._context.data.push(n)
@@ -178,6 +274,11 @@ class Execution(OperationMode):
                 self._context.data.push(i)
 
     def copy(self) -> None:
+        """
+        This method copies an item from the data stack at a specific position, and pushes the copy onto the stack.
+        It doesn't return anything.
+        This operation is typically used when you want to duplicate a value in the stack.
+        """
         a = self._context.data.pop()
         if type(a) is not int:
             return
@@ -189,6 +290,10 @@ class Execution(OperationMode):
             print("IndexError")
 
     def negate(self) -> None:
+        """
+        This method negates the top value on the data stack (i.e., changes its sign). It doesn't return anything.
+        This operation is typically used when you want to change the sign of the top value on the stack.
+        """
         a = self._context.data.pop()
         if type(a) is int or type(a) is float:
             self._context.data.push(-a)
@@ -196,6 +301,13 @@ class Execution(OperationMode):
             self._context.data.push("()")
 
     def null_check(self) -> None:
+        """
+        This method checks if the top value of the data stack is null (i.e., None in Python).
+        It replaces the top value of the stack with a boolean: True if the original value was null,
+        False otherwise. It doesn't return anything.
+        This operation is typically used when you want to check for the presence of a value on the stack.
+        """
+
         a = self._context.data.pop()
         if a == "()":
             self._context.data.push(1)
@@ -205,6 +317,18 @@ class Execution(OperationMode):
             self._context.data.push(0)
 
     def logical_operator(self, token) -> None:
+        """
+        This method performs logical operations, as specified by the 'token' argument,
+        on the top two values of the data stack. It replaces the top two values of the stack with
+        the result of the operation. It doesn't return anything.
+
+        Args:
+            token: A string representing the logical operation to perform.
+                   This should be one of the following: "&" (logical and), "|" (logical or).
+
+        This operation is typically used when you want to perform logical computations on stack values.
+        """
+
         a = self._context.data.pop()
         b = self._context.data.pop()
 
@@ -220,6 +344,18 @@ class Execution(OperationMode):
             self._context.data.push(0 if data == 0 else 1)
 
     def arithmetic_operator(self, token) -> None:
+        """
+        This method performs arithmetic operations, as specified by the 'token' argument,
+        on the top two values of the data stack. It replaces the top two values of the stack with
+        the result of the operation. It doesn't return anything.
+
+        Args:
+            token: A string representing the arithmetic operation to perform.
+                   This should be one of the following: "+", "-", "*", "/", "%".
+
+        This operation is typically used when you want to perform arithmetic computations on stack values.
+        """
+
         a = self._context.data.pop()
         b = self._context.data.pop()
 
@@ -236,6 +372,17 @@ class Execution(OperationMode):
             self._context.data.push(data)
 
     def comparison_operator(self, token) -> None:
+        """
+        This method performs comparison operations, as specified by the 'token' argument,
+        on the top two values of the data stack. It replaces the top two values of the stack with
+        the result of the operation. It doesn't return anything.
+
+        Args:
+            token: A string representing the comparison operation to perform.
+                   This should be one of the following: "=", "<", ">".
+
+        This operation is typically used when you want to compare two values on the stack.
+        """
         a = self._context.data.pop()
         b = self._context.data.pop()
         compare: int = self.compare(a, b)
@@ -249,8 +396,19 @@ class Execution(OperationMode):
 
     def compare(self, a, b, epsilon=EPSILON) -> int:
         """
-        Compare two values a and b
-        :return: 0 if a == b, -1 if a < b, 1 if a > b
+       This method compares two values, 'a' and 'b'. It's typically used for performing floating point comparisons with a certain level of precision.
+
+    Args:
+        a: The first value to be compared. It could be an integer, float, or other comparable types.
+        b: The second value to be compared. It could be an integer, float, or other comparable types.
+        epsilon: The tolerance value for floating point comparisons. Defaults to EPSILON.
+                 It's a small positive number used to handle the precision of floating point comparisons.
+
+    Returns:
+        int: Returns 0 if a == b within the specified tolerance (i.e., abs(a - b) <= epsilon),
+             -1 if a < b, 1 if a > b.
+
+    This operation is typically used when you want to compare two floating-point values with a level of precision.
         """
         a = self.cast_value(a)
         b = self.cast_value(b)

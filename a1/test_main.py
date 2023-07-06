@@ -246,3 +246,9 @@ class CalculatorTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+    # MEDIAN attempts on unsorted list
+    # calculator.register["g"] = "(7!7$0 5!5$10!10$2!2!2/>)"
+    # calculator.register["h"] = "(##1-#2-0 0()(8!8$0 5!5$11!11$7!4!4!2/1+=&7!7$4!4!2/>&|)()(Code)8!10+!10!12+!2!2!=2!4!5!<|3$9!9$+10!10$1-2!_~8+$8!8$@)"

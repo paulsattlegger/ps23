@@ -5,4 +5,4 @@
                 (plus (fibonacci (sub n 1)) (fibonacci (sub n 2)))
 
 }
-fibonacci 15
+fibonacci 10
