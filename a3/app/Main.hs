@@ -25,6 +25,7 @@ import System.Environment (getArgs)
 
 -- TODO: Document everything
 -- TODO: Also support "{}" braces
+-- TODO: Fix indentation (in `splitNewlines` replace "[("default", " ", i)]" with [] but then no empty lines are possible)
 data EditorState n = EditorState {_path :: FilePath, _index :: Int, _changed :: Bool, _text :: String}
 
 makeLenses ''EditorState
@@ -45,6 +46,8 @@ drawUI s = [ui, parser]
         <=> drawLines (splitNewlines (highlightBrace (highlightBraceAtCursor (highlightNameAtCursor word attrList) braceIndex)))
     parser = padTop Max message
 
+-- Returns the index in the AST of the brace that the cursor currently points at
+-- Input: [(Attr, String-part, Index in AST)] -> before -> after -> AST-index
 getIndexOfBrace :: [(String, String, Int)] -> String -> String -> Int
 getIndexOfBrace ast before after
   | null before = -1
@@ -52,9 +55,13 @@ getIndexOfBrace ast before after
   | last before == ')' = findBraceInAst ast ")" (countBraces before ')')
   | otherwise = -1
 
+-- Counts how often the given brace type occours in the String
+-- Input: Input-String -> BraceType -> Count
 countBraces :: String -> Char -> Int
 countBraces xs x = foldl (\count char -> if char == x then count + 1 else count) 0 xs
 
+-- Returns the AST index of given string based on how often it already occured i.e. get the AST-index of the 3rd "(" in the AST
+-- Input: AST -> BraceType -> nth occurance -> AST-index
 findBraceInAst :: [(String, String, Int)] -> String -> Int -> Int
 findBraceInAst ast str n = go ast str n 0
   where
@@ -64,6 +71,8 @@ findBraceInAst ast str n = go ast str n 0
       | x == str = go xs str n (count + 1)
       | otherwise = go xs str n count
 
+-- Returns the AST-index of the matching brace if one exists
+-- Input: AST -> AST-Index first brace -> AST-Index second brace
 getMatchingBrace :: [(String, String, Int)] -> Int -> Int
 getMatchingBrace ast i = fromMaybe (-1) match
   where
@@ -71,6 +80,8 @@ getMatchingBrace ast i = fromMaybe (-1) match
     match = lookup i pairs <|> lookup i (map swap pairs)
     swap (a, b) = (b, a)
 
+-- Given an AST-index pair this function highlights both strings at the corresponding index by setting the attribute in the triple
+-- Input: AST-Index pair -> AST -> modified AST
 highlightBraceIndex :: (Int, Int) -> [(String, String, Int)] -> [(String, String, Int)]
 highlightBraceIndex (a, b) = map format
   where
@@ -79,6 +90,8 @@ highlightBraceIndex (a, b) = map format
       | i == b = ("yellow", x, i)
       | otherwise = (s, x, i)
 
+-- Highlights matching braces at the current Cursor position
+-- Input: AST -> AST-Index -> modifed AST
 highlightBraceAtCursor :: [(String, String, Int)] -> Int -> [(String, String, Int)]
 highlightBraceAtCursor ast i
   | i == -1 = ast
@@ -116,6 +129,7 @@ highlightNameAtCursor word = map format
 addDefaultAttr :: [String] -> [(String, String, Int)]
 addDefaultAttr strings = zipWith (\str idx -> ("default", str, idx)) strings [0 ..]
 
+-- Converts the AST into Brick widgets that can be displayed on the terminal
 astToWidget :: [(String, String, Int)] -> T.Widget n
 astToWidget [] = emptyWidget
 astToWidget ((s, x, _) : cs)
@@ -132,9 +146,9 @@ splitAlphanumeric (x : xs)
        in alphanum : splitAlphanumeric rest
   | otherwise = [x] : splitAlphanumeric xs
 
--- Input: [Attr, String, Index]
 -- Returns a list of tuples that contains the indices of valid braces
 -- From: https://stackoverflow.com/questions/10243290/determining-matching-parenthesis-in-haskell
+-- Input: AST -> [AST-Index pair of matching braces]
 parenPairs :: [(String, String, Int)] -> [(Int, Int)]
 parenPairs = go []
   where
@@ -152,6 +166,7 @@ listToSet pairs = nub (concatMap (\(start, end) -> [start, end]) pairs)
 indexInList :: Int -> [Int] -> Bool
 indexInList index indices = index `elem` indices
 
+-- This function highlights unbalanced braces by checking for each brace if its index is contained in `parenPairs`  
 highlightBrace :: [(String, String, Int)] -> [(String, String, Int)]
 highlightBrace cs = map formatChar cs
   where
