@@ -24,7 +24,6 @@ import Parser
 import System.Environment (getArgs)
 
 -- TODO: Document everything
--- TODO: Also support "{}" braces
 -- TODO: Fix indentation (in `splitNewlines` replace "[("default", " ", i)]" with [] but then no empty lines are possible)
 data EditorState n = EditorState {_path :: FilePath, _index :: Int, _changed :: Bool, _text :: String}
 
@@ -53,6 +52,8 @@ getIndexOfBrace ast before after
   | null before = -1
   | last before == '(' = findBraceInAst ast "(" (countBraces before '(')
   | last before == ')' = findBraceInAst ast ")" (countBraces before ')')
+  | last before == '{' = findBraceInAst ast "{" (countBraces before '{')
+  | last before == '}' = findBraceInAst ast "}" (countBraces before '}')
   | otherwise = -1
 
 -- Counts how often the given brace type occours in the String
@@ -76,7 +77,7 @@ findBraceInAst ast str n = go ast str n 0
 getMatchingBrace :: [(String, String, Int)] -> Int -> Int
 getMatchingBrace ast i = fromMaybe (-1) match
   where
-    pairs = parenPairs ast
+    pairs = parenPairs ast ++ parenPairsCurly ast
     match = lookup i pairs <|> lookup i (map swap pairs)
     swap (a, b) = (b, a)
 
@@ -158,6 +159,15 @@ parenPairs = go []
     go (i : is) ((_, ")", j) : cs) = (i, j) : go is cs
     go acc (_ : cs) = go acc cs
 
+parenPairsCurly :: [(String, String, Int)] -> [(Int, Int)]
+parenPairsCurly = go []
+  where
+    go _ [] = []
+    go acc ((_, "{", i) : cs) = go (i : acc) cs
+    go [] ((_, "}", _) : cs) = go [] cs -- unbalanced parentheses!
+    go (i : is) ((_, "}", j) : cs) = (i, j) : go is cs
+    go acc (_ : cs) = go acc cs
+
 -- Converts list of index tuples to a set (without duplicates)
 listToSet :: [(Int, Int)] -> [Int]
 listToSet pairs = nub (concatMap (\(start, end) -> [start, end]) pairs)
@@ -173,9 +183,12 @@ highlightBrace cs = map formatChar cs
     formatChar (s, x, i)
       | x == "(" && not (isIndexInParenPairs i) = ("error", x, i)
       | x == ")" && not (isIndexInParenPairs i) = ("error", x, i)
+      | x == "{" && not (isIndexInCurlyParenPairs i) = ("error", x, i)
+      | x == "}" && not (isIndexInCurlyParenPairs i) = ("error", x, i)
       | otherwise = (s, x, i)
 
     isIndexInParenPairs i = indexInList i (listToSet (parenPairs cs))
+    isIndexInCurlyParenPairs i = indexInList i (listToSet (parenPairsCurly cs))
 
 currentWord :: String -> String -> String
 currentWord before after = reverse (takeWhile isAlpha (reverse before)) ++ takeWhile isAlpha after
