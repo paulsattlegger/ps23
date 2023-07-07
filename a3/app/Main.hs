@@ -63,36 +63,36 @@ drawParser s = padTop Max message
 
 -- | Draws each line seperated by "\n" into a new vBox
 drawLines :: [[(String, String, Int)]] -> T.Widget n
-drawLines lines' = vBox (map astToWidget lines')
+drawLines lines' = vBox (map listToWidget lines')
 
--- | Returns the index in the AST of the brace that the cursor currently points at.
--- Input: [(Attr, String-part, Index in AST)] -> before -> after -> AST-index
+-- | Returns the index of the brace that the cursor currently points at.
+-- Input: [(Attr, String-part, Index)] -> before -> after -> index
 indexOfBrace :: [(String, String, Int)] -> String -> String -> Int
-indexOfBrace ast before _
+indexOfBrace list before _
   | null before = -1
-  | last before == '(' = braceInAst ast "(" (countBraces before '(')
-  | last before == ')' = braceInAst ast ")" (countBraces before ')')
-  | last before == '{' = braceInAst ast "{" (countBraces before '{')
-  | last before == '}' = braceInAst ast "}" (countBraces before '}')
+  | last before == '(' = brace list "(" (countBraces before '(')
+  | last before == ')' = brace list ")" (countBraces before ')')
+  | last before == '{' = brace list "{" (countBraces before '{')
+  | last before == '}' = brace list "}" (countBraces before '}')
   | otherwise = -1
 
--- | Returns the AST index of given string based on how often it already occured i.e., get the AST-index of the 3rd "(" in the AST.
--- Input: AST -> BraceType -> nth occurance -> AST-index
-braceInAst :: [(String, String, Int)] -> String -> Int -> Int
-braceInAst ast s n = go ast s n 0
+-- | Returns the index of given string based on how often it already occured, i.e., get the index of the 3rd "(".
+-- Input: list -> BraceType -> n-th occurance -> index
+brace :: [(String, String, Int)] -> String -> Int -> Int
+brace list s n = go list s n 0
   where
-    go [] _ _ _ = error "String not found enough times in AST"
+    go [] _ _ _ = error "String not found sufficiently often"
     go ((_, x, i) : xs) s' n' count
       | x == s' && count + 1 == n' = i
       | x == s' = go xs s' n' (count + 1)
       | otherwise = go xs s' n' count
 
--- | Returns the AST-index of the matching brace if one exists.
--- Input: AST -> AST-Index first brace -> AST-Index second brace
+-- | Returns the index of the matching brace if one exists.
+-- Input: list -> index first brace -> list index second brace
 matchingBrace :: [(String, String, Int)] -> Int -> Int
-matchingBrace ast i = fromMaybe (-1) match
+matchingBrace list i = fromMaybe (-1) match
   where
-    pairs = parenPairs ast ++ parenPairsCurly ast
+    pairs = parenPairs list ++ parenPairsCurly list
     match = lookup i pairs <|> lookup i (map swap pairs)
     swap (a, b) = (b, a)
 
@@ -110,8 +110,8 @@ highlightBrace cs = map formatChar cs
     isIndexInParenPairs i = i `elem` listToSet (parenPairs cs)
     isIndexInCurlyParenPairs i = i `elem` listToSet (parenPairsCurly cs)
 
--- | Given an AST-index pair this function highlights both strings at the corresponding index by setting the attribute in the triple.
--- Input: AST-Index pair -> AST -> modified AST
+-- | Given an index pair this function highlights both strings at the corresponding index by setting the attribute in the triple.
+-- Input: Index pair -> list -> modified list
 highlightBraceIndex :: (Int, Int) -> [(String, String, Int)] -> [(String, String, Int)]
 highlightBraceIndex (a, b) = map format
   where
@@ -121,12 +121,12 @@ highlightBraceIndex (a, b) = map format
       | otherwise = (s, x, i)
 
 -- | Highlights matching braces at the current cursor position.
--- Input: AST -> AST-Index -> modifed AST
+-- Input: list -> list-Index -> modifed list
 highlightBraceAtCursor :: [(String, String, Int)] -> Int -> [(String, String, Int)]
-highlightBraceAtCursor ast i
-  | i == -1 = ast
-  | matchingBrace ast i == -1 = ast
-  | otherwise = highlightBraceIndex (i, matchingBrace ast i) ast
+highlightBraceAtCursor list i
+  | i == -1 = list
+  | matchingBrace list i == -1 = list
+  | otherwise = highlightBraceIndex (i, matchingBrace list i) list
 
 -- | Highlights a given word in a list of colored words.
 highlightNameAtCursor :: String -> [(String, String, Int)] -> [(String, String, Int)]
@@ -136,7 +136,7 @@ highlightNameAtCursor word = map format
       | x == word = ("green", x, i)
       | otherwise = (s, x, i)
 
--- | Splits an AST into seperate lines on a "\n"
+-- | Splits an list into seperate lines on a "\n"
 splitNewlines :: [(String, String, Int)] -> [[(String, String, Int)]]
 splitNewlines = go []
   where
@@ -151,18 +151,18 @@ splitNewlines = go []
 addDefaultAttr :: [String] -> [(String, String, Int)]
 addDefaultAttr strings = zipWith (\s idx -> ("default", s, idx)) strings [0 ..]
 
--- | Converts the AST into Brick widgets that can be displayed on the terminal
-astToWidget :: [(String, String, Int)] -> T.Widget n
-astToWidget [] = emptyWidget
-astToWidget ((s, x, _) : cs)
-  | s == "error" = withAttr (A.attrName "error") (str x) <+> astToWidget cs
-  | s == "green" = withAttr (A.attrName "green") (str x) <+> astToWidget cs
-  | s == "yellow" = withAttr (A.attrName "yellow") (str x) <+> astToWidget cs
-  | otherwise = str x <+> astToWidget cs
+-- | Converts the list into Brick widgets that can be displayed on the terminal
+listToWidget :: [(String, String, Int)] -> T.Widget n
+listToWidget [] = emptyWidget
+listToWidget ((s, x, _) : cs)
+  | s == "error" = withAttr (A.attrName "error") (str x) <+> listToWidget cs
+  | s == "green" = withAttr (A.attrName "green") (str x) <+> listToWidget cs
+  | s == "yellow" = withAttr (A.attrName "yellow") (str x) <+> listToWidget cs
+  | otherwise = str x <+> listToWidget cs
 
 -- | Returns a list of tuples that contains the indices of valid braces
 -- From: https://stackoverflow.com/questions/10243290/determining-matching-parenthesis-in-haskell
--- Input: AST -> [AST-Index pair of matching braces]
+-- Input: list -> [index pair of matching braces]
 parenPairs :: [(String, String, Int)] -> [(Int, Int)]
 parenPairs = go []
   where
