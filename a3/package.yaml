@@ -8,7 +8,6 @@ dependencies:
 - brick
 - microlens-platform
 - megaparsec
-- split
 - text
 - vty
 
